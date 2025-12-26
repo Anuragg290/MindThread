@@ -1,54 +1,202 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMessages } from '@/hooks/useMessages';
 import { useFiles } from '@/hooks/useFiles';
 import { useSummaries } from '@/hooks/useSummaries';
+import { useGroups } from '@/hooks/useGroups';
 import ChatWindow from '@/components/ChatWindow';
-import GroupInfoSidebar from '@/components/GroupInfoSidebar';
-import GroupsSidebar from '@/components/GroupsSidebar';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MessageSquare, Sparkles, Loader2, Trash2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  ArrowLeft, 
+  MessageSquare, 
+  FileText, 
+  Users, 
+  Calendar,
+  Search,
+  Upload,
+  MoreVertical,
+  Download,
+  Sparkles,
+  Sun,
+  Moon,
+  LogOut
+} from 'lucide-react';
 import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/services/api';
+import { Group, FileDocument, Message } from '@/types';
 
 export default function GroupChat() {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { groups, leaveGroup } = useGroups();
   const { messages, isLoading: messagesLoading, hasMore, sendMessage, loadMore, addReaction } = useMessages(groupId!);
   const { files, isLoading: filesLoading, isUploading, uploadFile, deleteFile } = useFiles(groupId!);
-  const { summaries, isLoading: summariesLoading, isGenerating, generateChatSummary, generateDocumentSummary, deleteSummary } = useSummaries(groupId!);
-  const [activeTab, setActiveTab] = useState('chat');
+  const { summaries, generateDocumentSummary, isGenerating } = useSummaries(groupId!);
+  const [group, setGroup] = useState<Group | null>(null);
+  const [isLoadingGroup, setIsLoadingGroup] = useState(true);
+  const [documentSearch, setDocumentSearch] = useState('');
+  const [memberSearch, setMemberSearch] = useState('');
+  const [documentFilter, setDocumentFilter] = useState('all');
+  const [memberFilter, setMemberFilter] = useState('all');
+  const [memberStats, setMemberStats] = useState<Record<string, { messages: number; files: number }>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('theme') || 'light') as 'light' | 'dark';
+  });
 
-  // UI-only: File upload handler - moved from Files tab to be used in ChatWindow and Sidebar
+  useEffect(() => {
+    if (groupId) {
+      fetchGroup();
+    }
+  }, [groupId, groups]);
+
+  // Initialize theme on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setCurrentTheme(savedTheme as 'light' | 'dark');
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, []);
+
+  // Calculate member statistics (messages and files)
+  useEffect(() => {
+    const calculateMemberStats = async () => {
+      if (!groupId || !group) return;
+
+      const stats: Record<string, { messages: number; files: number }> = {};
+
+      // Initialize all members with 0 stats
+      group.members.forEach(member => {
+        stats[member.user._id] = { messages: 0, files: 0 };
+      });
+
+      // Count messages per member
+      try {
+        const messagesRes = await api.getMessages(groupId, 1, 1000); // Get more messages for accurate count
+        if (messagesRes.success && messagesRes.data) {
+          messagesRes.data.data.forEach((msg: Message) => {
+            const senderId = typeof msg.sender === 'string' ? msg.sender : msg.sender?._id;
+            if (senderId && stats[senderId]) {
+              stats[senderId].messages++;
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching messages for stats:', error);
+      }
+
+      // Count files per member
+      files.forEach(file => {
+        const uploaderId = typeof file.uploader === 'string' ? file.uploader : file.uploader?._id;
+        if (uploaderId && stats[uploaderId]) {
+          stats[uploaderId].files++;
+        }
+      });
+
+      setMemberStats(stats);
+    };
+
+    if (group && files.length >= 0) {
+      calculateMemberStats();
+    }
+  }, [groupId, group, files, messages]);
+
+  const handleThemeChange = (theme: 'light' | 'dark') => {
+    setCurrentTheme(theme);
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    localStorage.setItem('theme', theme);
+  };
+
+  const fetchGroup = async () => {
+    setIsLoadingGroup(true);
+    const response = await api.getGroup(groupId!);
+    if (response.success && response.data) {
+      setGroup(response.data);
+    }
+    setIsLoadingGroup(false);
+  };
+
   const handleFileUpload = async (file: File) => {
     await uploadFile(file);
   };
 
-  // UI-only: Wrapper functions for sidebar callbacks (type compatibility)
-  const handleDeleteFile = async (fileId: string) => {
-    await deleteFile(fileId);
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
-  const handleGenerateDocumentSummary = async (fileId: string) => {
-    await generateDocumentSummary(fileId);
-  };
+  const filteredDocuments = files.filter(file => {
+    const matchesSearch = file.originalName.toLowerCase().includes(documentSearch.toLowerCase());
+    const matchesFilter = documentFilter === 'all' || 
+      (documentFilter === 'pdf' && file.mimeType === 'application/pdf') ||
+      (documentFilter === 'docx' && file.mimeType?.includes('wordprocessingml')) ||
+      (documentFilter === 'image' && file.mimeType?.startsWith('image/'));
+    return matchesSearch && matchesFilter;
+  });
+
+  const filteredMembers = group?.members.filter(member => {
+    const matchesSearch = member.user.username.toLowerCase().includes(memberSearch.toLowerCase()) ||
+      member.user.email.toLowerCase().includes(memberSearch.toLowerCase());
+    const matchesFilter = memberFilter === 'all' || member.role === memberFilter;
+    return matchesSearch && matchesFilter;
+  }) || [];
+
+  const onlineMembers = filteredMembers.length; // Simplified - can be enhanced with actual online status
+  const totalMembers = group?.members.length || 0;
+
+  if (isLoadingGroup) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading group...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!group) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Group not found</p>
+          <Button onClick={() => navigate('/dashboard')}>Go to Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* 
-        LAYOUT: 3-column ChatGPT-like layout
-        - Page uses h-screen (100vh) with overflow-hidden
-        - Header fixed at top
-        - 3-column layout: [Left Sidebar | Chat Area | Group Info]
-        - Each column scrolls independently
-        - Header, input, and sidebars remain fixed
-      */}
-      {/* Header - Fixed at top */}
-      <header className="flex-shrink-0 border-b border-border bg-card z-10">
-        <div className="px-4 sm:px-6">
-          <div className="flex items-center gap-3 h-14">
+      {/* Top Header Section */}
+      <header className="flex-shrink-0 border-b border-border bg-card">
+        <div className="px-6 py-4">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start gap-4 flex-1">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -57,57 +205,72 @@ export default function GroupChat() {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-lg font-medium text-foreground">Study Group</h1>
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-foreground mb-2">{group.name}</h1>
+                <p className="text-muted-foreground mb-4">{group.description}</p>
+                <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>{totalMembers} members</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span>{files.length} documents</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>Created {format(new Date(group.createdAt), 'MM/dd/yyyy')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => handleThemeChange('light')}>
+                    <Sun className="h-4 w-4 mr-2" />
+                    Light Theme
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleThemeChange('dark')}>
+                    <Moon className="h-4 w-4 mr-2" />
+                    Dark Theme
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* 
-        LAYOUT: 3-column structure
-        - Left Sidebar: Fixed width (w-64 = 256px), scrolls internally
-        - Chat Area: Flexible width (flex-1), messages scroll internally
-        - Group Info Sidebar: Fixed width (w-80 = 320px), scrolls internally
-        - All columns isolated scrolling, page does not scroll
-      */}
+      {/* Three-Panel Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar - Groups List */}
-        <div className="hidden lg:flex lg:w-64 flex-shrink-0">
-          <GroupsSidebar />
+        {/* Left Panel: Group Chat */}
+        <div className="flex-1 flex flex-col min-w-0 border-r border-border">
+          <div className="flex-shrink-0 border-b border-border bg-card px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">Group Chat</h2>
+                <Badge variant="secondary" className="text-xs">{onlineMembers} members online</Badge>
         </div>
-
-        {/* Vertical Divider */}
-        <div className="hidden lg:block w-px bg-border" />
-
-        {/* Chat Area - Flexible width */}
-        <div className="flex-1 flex flex-col min-w-0">
-
-          {/* Tabs - Fixed at top, below header */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-            <div className="flex-shrink-0 border-b border-border bg-card px-4 sm:px-6 pt-4">
-              <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted p-1 rounded-lg">
-                <TabsTrigger 
-                  value="chat"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all font-normal"
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Chat</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="summaries"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all font-normal"
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Summaries</span>
-                </TabsTrigger>
-              </TabsList>
+              <Button variant="ghost" size="icon">
+                <Search className="h-4 w-4" />
+              </Button>
             </div>
-
-            <TabsContent value="chat" className="flex-1 m-0 min-h-0">
-              {/* UI-only: File upload handler passed to ChatWindow for "+" button */}
+          </div>
+          <div className="flex-1 min-h-0">
               <ChatWindow 
                 groupId={groupId!}
                 messages={messages}
-                files={files}
+              files={[]}
                 isLoading={messagesLoading} 
                 hasMore={hasMore} 
                 onSendMessage={sendMessage} 
@@ -116,118 +279,252 @@ export default function GroupChat() {
                 isUploading={isUploading}
                 onReaction={addReaction}
               />
-            </TabsContent>
+          </div>
+        </div>
 
-            <TabsContent value="summaries" className="flex-1 p-4 sm:p-6 overflow-y-auto">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-6 flex justify-between items-center">
-              <div>
-                <h2 className="text-lg font-medium text-foreground mb-1">AI Summaries</h2>
-                <p className="text-sm text-muted-foreground">AI-powered insights from your conversations</p>
+        {/* Middle Panel: Shared Documents */}
+        <div className="w-96 flex flex-col border-r border-border bg-card">
+          <div className="flex-shrink-0 border-b border-border px-4 py-3">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">Shared Documents</h2>
+                <Badge variant="secondary" className="text-xs">{files.length} files</Badge>
               </div>
-              <Button 
-                onClick={() => generateChatSummary(50)} 
-                disabled={isGenerating}
-                variant="outline"
-                className="border-border hover:bg-muted/50 transition-colors"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Summarize Chat
-                  </>
-                )}
-              </Button>
             </div>
-            {summariesLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search documents..."
+                  value={documentSearch}
+                  onChange={(e) => setDocumentSearch(e.target.value)}
+                  className="pl-10 h-9"
+                />
               </div>
-            ) : summaries.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="mx-auto w-16 h-16 bg-muted/50 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-                  <Sparkles className="h-8 w-8 text-muted-foreground/60" />
-                </div>
-                <p className="text-muted-foreground">No summaries yet</p>
+              <div className="flex items-center gap-2">
+                <select
+                  value={documentFilter}
+                  onChange={(e) => setDocumentFilter(e.target.value)}
+                  className="flex-1 h-9 px-3 text-sm border border-border rounded-md bg-background text-foreground"
+                >
+                  <option value="all">All Types</option>
+                  <option value="pdf">PDF</option>
+                  <option value="docx">DOCX</option>
+                  <option value="image">Images</option>
+                </select>
+              <Button 
+                  size="sm"
+                variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-9"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload File
+              </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.txt"
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            {filesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              </div>
+            ) : filteredDocuments.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">No documents found</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {summaries.map((summary) => (
-                  <Card key={summary._id} className="border-border hover:bg-muted/30 transition-colors">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="secondary">{summary.type}</Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(summary.createdAt), 'MMM d, yyyy HH:mm')}
-                          </span>
+              filteredDocuments.map((file) => {
+                const uploader = typeof file.uploader === 'string' ? null : file.uploader;
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+                const fileExtension = file.originalName.split('.').pop()?.toUpperCase() || 'FILE';
+                const hasSummary = summaries.some(s => {
+                  if (!s.sourceDocument) return false;
+                  const sourceDoc = s.sourceDocument;
+                  if (typeof sourceDoc === 'string') {
+                    return sourceDoc === file._id;
+                  }
+                  if (typeof sourceDoc === 'object' && '_id' in sourceDoc) {
+                    return (sourceDoc as any)._id === file._id;
+                  }
+                  return false;
+                });
+                const isProcessing = false; // Files are uploaded directly, no processing needed
+                
+                return (
+                  <Card key={file._id} className="border-border hover:bg-muted/30 transition-colors">
+                    <CardContent className="p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          <FileText className="h-5 w-5 text-foreground" />
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate mb-1">{file.originalName}</p>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {fileSizeMB} MB {fileExtension} • {format(new Date(file.createdAt), 'MM/dd/yyyy')}
+                          </p>
+                          {uploader && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={uploader.avatar} alt={uploader.username} />
+                                <AvatarFallback className="text-xs">{uploader.username[0]?.toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-muted-foreground">{uploader.username}</span>
+                            </div>
+                          )}
+                          {isProcessing && (
+                            <Badge variant="secondary" className="text-xs mb-2">
+                              Processing...
+                            </Badge>
+                          )}
+                          {hasSummary && !isProcessing && (
+                            <Badge variant="secondary" className="text-xs mb-2">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              AI Summary Ready
+                            </Badge>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => window.open(file.url, '_blank')}>
+                              View
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => window.open(file.url, '_blank')}>
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
                         <Button 
                           size="sm" 
                           variant="ghost" 
-                          onClick={() => deleteSummary(summary._id)}
-                          className="hover:bg-muted/50"
+                              className="h-7 text-xs"
+                              onClick={() => generateDocumentSummary(file._id)}
+                              disabled={isGenerating || hasSummary}
                         >
-                          <Trash2 className="h-4 w-4" />
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              {hasSummary ? 'Summary Ready' : 'AI Summary'}
                         </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm leading-relaxed text-foreground font-normal">{summary.content}</p>
-                      {summary.keyTopics.length > 0 && (
-                        <div>
-                          <p className="text-xs font-normal mb-2 text-foreground">Key Topics:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {summary.keyTopics.map((t, i) => (
-                              <Badge key={i} variant="outline" className="border-border">
-                                {t}
-                              </Badge>
-                            ))}
                           </div>
                         </div>
-                      )}
-                      {summary.actionItems.length > 0 && (
-                        <div>
-                          <p className="text-xs font-normal mb-2 text-foreground">Action Items:</p>
-                          <ul className="text-sm list-disc list-inside space-y-1 text-muted-foreground">
-                            {summary.actionItems.map((a, i) => (
-                              <li key={i} className="leading-relaxed">{a}</li>
-                            ))}
-                          </ul>
                         </div>
-                      )}
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                );
+              })
             )}
           </div>
-        </TabsContent>
-      </Tabs>
         </div>
 
-        {/* Vertical Divider */}
-        <div className="hidden lg:block w-px bg-border" />
-
-        {/* Group Info Sidebar - Right sidebar, always visible on desktop */}
-        <div className="hidden lg:flex lg:w-80 flex-shrink-0">
-          <GroupInfoSidebar
-            groupId={groupId!}
-            isOpen={true}
-            onClose={() => {}}
-            files={files}
-            filesLoading={filesLoading}
-            isUploading={isUploading}
-            onFileUpload={handleFileUpload}
-            onDeleteFile={handleDeleteFile}
-            onGenerateDocumentSummary={handleGenerateDocumentSummary}
-            isGenerating={isGenerating}
-          />
+        {/* Right Panel: Members */}
+        <div className="w-80 flex flex-col bg-card">
+          <div className="flex-shrink-0 border-b border-border px-4 py-3">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">Members</h2>
+                <Badge variant="secondary" className="text-xs">{totalMembers} members • {onlineMembers} online</Badge>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search members..."
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  className="pl-10 h-9"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={memberFilter}
+                  onChange={(e) => setMemberFilter(e.target.value)}
+                  className="w-full h-9 px-3 text-sm border border-border rounded-md bg-background text-foreground"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="owner">Owner</option>
+                  <option value="member">Member</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+            {filteredMembers.map((member) => {
+              const memberUser = member.user;
+              const initials = (memberUser.username?.[0] || memberUser.email?.[0] || 'U').toUpperCase();
+              const isOnline = true; // Simplified - can be enhanced with actual online status
+              const isCurrentUser = memberUser._id === user?._id;
+              const isOwner = member.role === 'owner';
+              const currentUserIsOwner = group?.members.find(m => m.user._id === user?._id)?.role === 'owner';
+              const canLeave = isCurrentUser && !isOwner;
+              
+              const handleLeaveGroup = async () => {
+                if (groupId && window.confirm('Are you sure you want to leave this group?')) {
+                  await leaveGroup(groupId);
+                  navigate('/dashboard');
+                }
+              };
+              
+              return (
+                <Card key={memberUser._id} className="border-border hover:bg-muted/30 transition-colors">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="relative">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={memberUser.avatar} alt={memberUser.username} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          {isOnline && (
+                            <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background"></div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{memberUser.username}</p>
+                          <p className="text-xs text-muted-foreground truncate">{memberUser.email}</p>
+                          <Badge variant="secondary" className="text-xs mt-1 mr-1">
+                            {member.role === 'owner' ? 'Admin' : member.role === 'admin' ? 'Moderator' : 'Member'}
+                          </Badge>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Joined {format(new Date(member.joinedAt), 'MM/dd/yyyy')}
+                          </p>
+                          {memberStats[memberUser._id] && (
+                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                              <span>{memberStats[memberUser._id].messages} messages</span>
+                              <span>{memberStats[memberUser._id].files} files</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {canLeave && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={handleLeaveGroup} className="text-red-600 dark:text-red-400">
+                              <LogOut className="h-4 w-4 mr-2" />
+                              Leave Group
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
