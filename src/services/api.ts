@@ -129,10 +129,17 @@ class ApiService {
     return this.request(`/groups/${groupId}/messages?page=${page}&limit=${limit}`);
   }
 
-  async sendMessage(groupId: string, content: string): Promise<ApiResponse<Message>> {
+  async sendMessage(groupId: string, content: string, replyTo?: string): Promise<ApiResponse<Message>> {
     return this.request(`/groups/${groupId}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, replyTo }),
+    });
+  }
+
+  async addMessageReaction(groupId: string, messageId: string, emoji: string): Promise<ApiResponse<Message>> {
+    return this.request(`/groups/${groupId}/messages/${messageId}/reaction`, {
+      method: 'POST',
+      body: JSON.stringify({ emoji }),
     });
   }
 

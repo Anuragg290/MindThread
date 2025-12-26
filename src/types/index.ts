@@ -35,6 +35,11 @@ export interface Group {
 }
 
 // Message Types
+export interface MessageReaction {
+  emoji: string;
+  users: string[]; // Array of user IDs who reacted
+}
+
 export interface Message {
   _id: string;
   content: string;
@@ -42,6 +47,10 @@ export interface Message {
   group: string;
   createdAt: string;
   updatedAt: string;
+  // 🔥 TIER 2: Premium features
+  replyTo?: string | null; // Message ID this is replying to
+  reactions?: MessageReaction[]; // Emoji reactions
+  isPinned?: boolean; // Whether message is pinned
 }
 
 // File Types

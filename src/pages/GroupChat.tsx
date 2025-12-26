@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 export default function GroupChat() {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
-  const { messages, isLoading: messagesLoading, hasMore, sendMessage, loadMore } = useMessages(groupId!);
+  const { messages, isLoading: messagesLoading, hasMore, sendMessage, loadMore, addReaction } = useMessages(groupId!);
   const { files, isLoading: filesLoading, isUploading, uploadFile, deleteFile } = useFiles(groupId!);
   const { summaries, isLoading: summariesLoading, isGenerating, generateChatSummary, generateDocumentSummary, deleteSummary } = useSummaries(groupId!);
   const [activeTab, setActiveTab] = useState('chat');
@@ -105,6 +105,7 @@ export default function GroupChat() {
             <TabsContent value="chat" className="flex-1 m-0 min-h-0">
               {/* UI-only: File upload handler passed to ChatWindow for "+" button */}
               <ChatWindow 
+                groupId={groupId!}
                 messages={messages}
                 files={files}
                 isLoading={messagesLoading} 
@@ -113,6 +114,7 @@ export default function GroupChat() {
                 onLoadMore={loadMore}
                 onFileUpload={handleFileUpload}
                 isUploading={isUploading}
+                onReaction={addReaction}
               />
             </TabsContent>
 

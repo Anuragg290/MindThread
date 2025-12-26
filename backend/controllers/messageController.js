@@ -68,7 +68,7 @@ export const sendMessage = async (req, res, next) => {
     }
 
     const { groupId } = req.params;
-    const { content } = req.body;
+    const { content, replyTo } = req.body;
     const userId = req.user._id;
 
     const group = await Group.findById(groupId).lean();
@@ -88,6 +88,7 @@ export const sendMessage = async (req, res, next) => {
       content,
       sender: userId,
       group: groupId,
+      replyTo: replyTo || null,
     });
 
     await message.populate('sender', 'username email avatar');
@@ -101,6 +102,92 @@ export const sendMessage = async (req, res, next) => {
     io.to(`group:${groupId}`).emit('message:new', messageObj);
 
     res.status(201).json(messageObj);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 🔥 TIER 2: Toggle reaction on message
+export const toggleReaction = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: errors.array()[0].msg,
+      });
+    }
+
+    const { groupId, messageId } = req.params;
+    const { emoji } = req.body;
+    const userId = req.user._id;
+
+    // Verify user is a member of the group
+    const group = await Group.findById(groupId).lean();
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found' });
+    }
+
+    const isMember = group.members.some(
+      (member) => member.user.toString() === userId.toString()
+    );
+    if (!isMember) {
+      return res.status(403).json({ success: false, message: 'Not a group member' });
+    }
+
+    // Find the message
+    const message = await Message.findOne({ _id: messageId, group: groupId });
+    if (!message) {
+      return res.status(404).json({ success: false, message: 'Message not found' });
+    }
+
+    // Initialize reactions array if it doesn't exist
+    if (!message.reactions) {
+      message.reactions = [];
+    }
+
+    // Find existing reaction for this emoji
+    const existingReaction = message.reactions.find(r => r.emoji === emoji);
+    
+    if (existingReaction) {
+      // Toggle: remove user if already reacted, add if not
+      const userIndex = existingReaction.users.findIndex(
+        id => id.toString() === userId.toString()
+      );
+      
+      if (userIndex > -1) {
+        // Remove user from reaction
+        existingReaction.users.splice(userIndex, 1);
+        // Remove reaction entirely if no users left
+        if (existingReaction.users.length === 0) {
+          message.reactions = message.reactions.filter(r => r.emoji !== emoji);
+        }
+      } else {
+        // Add user to reaction
+        existingReaction.users.push(userId);
+      }
+    } else {
+      // Create new reaction
+      message.reactions.push({ emoji, users: [userId] });
+    }
+
+    await message.save();
+    await message.populate('sender', 'username email avatar');
+    await message.populate('reactions.users', 'username');
+
+    const messageObj = message.toObject();
+
+    // 🔥 EMIT SOCKET EVENT FOR REACTION UPDATE
+    const io = req.app.get('io');
+    io.to(`group:${groupId}`).emit('reaction:update', {
+      messageId: messageId,
+      message: messageObj,
+    });
+
+    res.json({
+      success: true,
+      data: messageObj,
+    });
   } catch (error) {
     next(error);
   }

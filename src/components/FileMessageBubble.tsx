@@ -12,14 +12,37 @@ interface FileMessageBubbleProps {
 
 export default function FileMessageBubble({ file }: FileMessageBubbleProps) {
   const { user } = useAuth();
-  const isOwn = file.uploader._id === user?._id;
+  
+  // Defensive check: handle cases where uploader might be undefined or a string ID
+  const uploaderId = file.uploader
+    ? (typeof file.uploader === 'string'
+        ? file.uploader
+        : file.uploader._id?.toString() || file.uploader.toString())
+    : null;
+  const isOwn = uploaderId === user?._id?.toString();
 
-  const initials = file.uploader.username
+  // Defensive check for uploader username
+  const uploaderUsername = typeof file.uploader === 'object' && file.uploader?.username
+    ? file.uploader.username
+    : 'Unknown';
+  const initials = uploaderUsername
     .split(' ')
     .map((n) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
+
+  // Safe date formatting helper
+  const formatTime = (dateValue: string | Date | undefined): string => {
+    if (!dateValue) return '--:--';
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return '--:--';
+      return format(date, 'HH:mm');
+    } catch (error) {
+      return '--:--';
+    }
+  };
 
   const fileIcon = useMemo(() => {
     const mimeType = file.mimeType?.toLowerCase() || '';
@@ -69,10 +92,10 @@ export default function FileMessageBubble({ file }: FileMessageBubbleProps) {
         {/* Meta */}
         <div className={cn('flex items-center gap-2 mb-1.5', isOwn && 'flex-row-reverse')}>
           <span className="text-xs font-normal text-foreground">
-            {isOwn ? 'You' : file.uploader.username}
+            {isOwn ? 'You' : uploaderUsername}
           </span>
           <span className="text-xs text-muted-foreground">
-            {format(new Date(file.createdAt), 'HH:mm')}
+            {formatTime(file.createdAt)}
           </span>
         </div>
 

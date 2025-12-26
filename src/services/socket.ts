@@ -9,6 +9,7 @@ type MessageHandler = (message: Message) => void;
 type FileHandler = (file: FileDocument) => void;
 type NotificationHandler = (data: { userId: string; username: string; action: 'join' | 'leave' }) => void;
 type TypingHandler = (data: { userId: string; username: string; isTyping: boolean }) => void;
+type ReactionHandler = (data: { messageId: string; message: Message }) => void;
 
 class SocketService {
   private socket: Socket | null = null;
@@ -16,6 +17,7 @@ class SocketService {
   private fileHandlers: FileHandler[] = [];
   private notificationHandlers: NotificationHandler[] = [];
   private typingHandlers: TypingHandler[] = [];
+  private reactionHandlers: ReactionHandler[] = [];
   private currentGroupId: string | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
@@ -34,6 +36,7 @@ class SocketService {
     this.socket.off('file:uploaded');
     this.socket.off('notification');
     this.socket.off('typing');
+    this.socket.off('reaction:update');
     this.socket.off('error');
     this.socket.off('joined_group');
     this.socket.off('left_group');
@@ -176,6 +179,51 @@ class SocketService {
     // Listen for typing indicators
     this.socket.on('typing', (data: { userId: string; username: string; isTyping: boolean }) => {
       this.typingHandlers.forEach((handler) => handler(data));
+    });
+
+    // 🔥 TIER 2: Listen for reaction updates
+    this.socket.on('reaction:update', (data: any) => {
+      console.log('🔥 Reaction update received:', data.messageId);
+      // Normalize message format
+      const message = data.message as any;
+      // Safe date normalization helper
+      const normalizeDate = (dateValue: any): string => {
+        if (!dateValue) return new Date().toISOString();
+        try {
+          if (typeof dateValue === 'string') {
+            const date = new Date(dateValue);
+            if (isNaN(date.getTime())) return new Date().toISOString();
+            return dateValue; // Already a string, return as-is if valid
+          }
+          if (dateValue instanceof Date) {
+            if (isNaN(dateValue.getTime())) return new Date().toISOString();
+            return dateValue.toISOString();
+          }
+          if ((dateValue as any)?.toISOString) {
+            return (dateValue as any).toISOString();
+          }
+          const date = new Date(dateValue);
+          if (isNaN(date.getTime())) return new Date().toISOString();
+          return date.toISOString();
+        } catch (error) {
+          return new Date().toISOString();
+        }
+      };
+
+      const normalizedMessage: Message = {
+        ...message, // Preserve all fields including sender, content, etc.
+        _id: message._id?.toString() || message._id,
+        createdAt: normalizeDate(message.createdAt),
+        updatedAt: normalizeDate(message.updatedAt),
+        // Preserve sender as-is (backend should populate it)
+        sender: message.sender || message.sender,
+        // Preserve all other fields
+        content: message.content || message.content,
+        group: message.group || message.group,
+        replyTo: message.replyTo || message.replyTo,
+        reactions: message.reactions || message.reactions,
+      };
+      this.reactionHandlers.forEach((handler) => handler({ messageId: data.messageId, message: normalizedMessage }));
     });
 
     // Listen for errors
@@ -380,6 +428,23 @@ class SocketService {
     return () => {
       this.fileHandlers = this.fileHandlers.filter((h) => h !== handler);
       console.log('🗑️ Unregistered file handler, remaining handlers:', this.fileHandlers.length);
+    };
+  }
+
+  // 🔥 TIER 2: Subscribe to reaction updates
+  onReaction(handler: ReactionHandler) {
+    console.log('🔥 Registering reaction handler, total handlers:', this.reactionHandlers.length + 1);
+    this.reactionHandlers.push(handler);
+    
+    if (this.socket && this.isConnected()) {
+      console.log('✅ Socket connected, reaction handler registered and ready');
+    } else {
+      console.log('⏳ Socket not connected yet, reaction handler will be called when socket connects');
+    }
+    
+    return () => {
+      this.reactionHandlers = this.reactionHandlers.filter((h) => h !== handler);
+      console.log('🗑️ Unregistered reaction handler, remaining handlers:', this.reactionHandlers.length);
     };
   }
 }
