@@ -109,6 +109,16 @@ export const uploadFile = async (req, res, next) => {
     fileObj.createdAt = fileObj.createdAt.toISOString();
     fileObj.updatedAt = fileObj.updatedAt.toISOString();
 
+    // 🔥 EMIT SOCKET EVENT FOR FILE UPLOAD
+    console.log('🔥 EMITTING SOCKET FILE:', fileObj._id);
+    const io = req.app.get('io');
+    if (io) {
+      console.log('🔥 IO EXISTS?', !!io);
+      io.to(`group:${groupId}`).emit('file:new', fileObj);
+    } else {
+      console.warn('⚠️ Socket.io instance not found in app');
+    }
+
     res.status(201).json(fileObj);
   } catch (error) {
     // Clean up uploaded file on error

@@ -43,10 +43,12 @@ export function useMessages(groupId: string) {
   useEffect(() => {
     fetchMessages(1);
     
-    // CRITICAL FIX: Join group room for real-time messages
+    // CRITICAL FIX: Join group - socket service will wait for connection if needed
+    console.log('🔄 useMessages: Joining group:', groupId);
     socketService.joinGroup(groupId);
-
+    
     // CRITICAL FIX: Socket message listener - handles real-time messages
+    // Register listener ONCE per group - socket service handles connection lifecycle
     const unsubscribe = socketService.onMessage((message) => {
       console.log('🔵 Socket message received in useMessages:', {
         id: message._id,
@@ -118,6 +120,7 @@ export function useMessages(groupId: string) {
     return () => {
       unsubscribe();
       socketService.leaveGroup(groupId);
+      // Note: connect handler cleanup is handled by socket service
     };
   }, [groupId, fetchMessages]);
 
