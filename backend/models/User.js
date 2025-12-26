@@ -24,6 +24,27 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    institution: {
+      type: String,
+      default: null,
+    },
+    academicYear: {
+      type: String,
+      enum: ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', null],
+      default: null,
+    },
+    major: {
+      type: String,
+      default: null,
+    },
+    bio: {
+      type: String,
+      default: null,
+    },
+    interests: {
+      type: [String],
+      default: [],
+    },
     role: {
       type: String,
       enum: ['admin', 'user'],
@@ -38,6 +59,11 @@ const userSchema = new mongoose.Schema(
         ret._id = ret._id.toString();
         ret.createdAt = ret.createdAt.toISOString();
         ret.updatedAt = ret.updatedAt.toISOString();
+        ret.institution = ret.institution || null;
+        ret.academicYear = ret.academicYear || null;
+        ret.major = ret.major || null;
+        ret.bio = ret.bio || null;
+        ret.interests = ret.interests || [];
         return ret;
       },
     },

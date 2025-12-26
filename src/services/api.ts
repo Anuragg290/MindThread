@@ -68,15 +68,48 @@ class ApiService {
     });
   }
 
-  async register(username: string, email: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> {
+  async register(username: string, email: string, password: string, institution?: string): Promise<ApiResponse<{ user: User; token: string }>> {
     return this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password, institution }),
     });
   }
 
   async getProfile(): Promise<ApiResponse<User>> {
     return this.request('/auth/profile');
+  }
+
+  async updateProfile(data: Partial<User>): Promise<ApiResponse<User>> {
+    return this.request('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async uploadAvatar(file: File): Promise<ApiResponse<User>> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const token = this.getToken();
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/profile/avatar`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.message || 'Upload failed' };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Upload failed' };
+    }
   }
 
   // Group endpoints

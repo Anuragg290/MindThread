@@ -223,8 +223,9 @@ export default function GroupInfoSidebar({
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
-                            // UI-only: Toggle theme by setting data-theme attribute
+                            // Toggle theme and persist to localStorage
                             document.documentElement.removeAttribute('data-theme');
+                            localStorage.setItem('theme', 'light');
                           }}
                           className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-all hover:bg-muted/50"
                           style={{
@@ -242,8 +243,9 @@ export default function GroupInfoSidebar({
                         </button>
                         <button
                           onClick={() => {
-                            // UI-only: Toggle theme by setting data-theme attribute
+                            // Toggle theme and persist to localStorage
                             document.documentElement.setAttribute('data-theme', 'dark');
+                            localStorage.setItem('theme', 'dark');
                           }}
                           className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-all hover:bg-muted/50"
                           style={{

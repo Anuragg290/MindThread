@@ -5,8 +5,9 @@ import { socketService } from '@/services/socket';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (username: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (username: string, email: string, password: string, institution?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -63,8 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: false, error: response.error };
   }, []);
 
-  const register = useCallback(async (username: string, email: string, password: string) => {
-    const response = await api.register(username, email, password);
+  const register = useCallback(async (username: string, email: string, password: string, institution?: string) => {
+    const response = await api.register(username, email, password, institution);
     if (response.success && response.data) {
       const { user, token } = response.data;
       api.setToken(token);
@@ -80,6 +81,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: false, error: response.error };
   }, []);
 
+  const updateUser = useCallback((user: User) => {
+    setAuthState((prev) => ({
+      ...prev,
+      user,
+    }));
+  }, []);
+
   const logout = useCallback(() => {
     api.setToken(null);
     socketService.disconnect();
@@ -92,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...authState, login, register, logout }}>
+    <AuthContext.Provider value={{ ...authState, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

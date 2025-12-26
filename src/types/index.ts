@@ -6,6 +6,11 @@ export interface User {
   email: string;
   username: string;
   avatar?: string;
+  institution?: string;
+  academicYear?: string;
+  major?: string;
+  bio?: string;
+  interests?: string[];
   createdAt: string;
 }
 

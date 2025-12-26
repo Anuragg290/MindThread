@@ -4,12 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, Loader2 } from 'lucide-react';
+import { BookOpen, Loader2, Eye, EyeOff, ArrowRight, GraduationCap, Shield, Users } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -30,58 +32,127 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md border-border">
-        <CardHeader className="text-center space-y-4 pb-6">
-          <div className="flex justify-center">
-            <div className="p-3.5 bg-muted rounded-xl">
-              <BookOpen className="h-8 w-8 text-foreground" />
+    <div className="min-h-screen flex">
+      {/* Left Column - Marketing */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 p-12 flex-col justify-between relative overflow-hidden">
+        <div>
+          <div className="flex items-center gap-3 mb-12">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <BookOpen className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-semibold text-white">StudySync</h1>
+          </div>
+          
+          <h2 className="text-4xl font-bold text-white mb-4">
+            Collaborate Smarter, Learn Together.
+          </h2>
+          <p className="text-lg text-blue-100 mb-12">
+            Join thousands of students using AI-powered study groups to achieve academic excellence through collaborative learning.
+          </p>
+
+          {/* Testimonial */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 max-w-md">
+            <div className="flex items-start gap-4">
+              <Avatar className="h-12 w-12">
+                <AvatarFallback className="bg-white/20 text-white">SC</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-white mb-3 italic">
+                  "StudySync transformed how our study group collaborates. The AI summaries save us hours of review time!"
+                </p>
+                <p className="text-sm text-blue-100">
+                  Sarah Chen, Biology Major, Stanford University.
+                </p>
+              </div>
             </div>
           </div>
-          <div className="space-y-2">
-            <CardTitle className="text-2xl font-medium text-foreground">Welcome Back</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Sign in to your Virtual Study Group account
-            </CardDescription>
+        </div>
+
+        {/* Statistics */}
+        <div className="flex gap-8 text-white">
+          <div>
+            <div className="text-3xl font-bold">50K+</div>
+            <div className="text-sm text-blue-100">Active Users</div>
           </div>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-5">
+          <div>
+            <div className="text-3xl font-bold">200+</div>
+            <div className="text-sm text-blue-100">Universities</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold">1M+</div>
+            <div className="text-sm text-blue-100">Documents</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background">
+        <div className="w-full max-w-md">
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-foreground mb-2">Welcome Back</h2>
+            <p className="text-muted-foreground">Sign in to continue your learning journey.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-3.5 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
+              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
                 {error}
               </div>
             )}
+
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground font-normal">Email</Label>
+              <Label htmlFor="email" className="text-foreground">Email Address *</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="student@university.edu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 border-border focus:border-border focus:ring-2 focus:ring-foreground/10 transition-all"
+                className="h-11"
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground font-normal">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="h-11 border-border focus:border-border focus:ring-2 focus:ring-foreground/10 transition-all"
-              />
+              <Label htmlFor="password" className="text-foreground">Password *</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-11 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4 pt-2">
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-border"
+                />
+                <span className="text-sm text-foreground">Remember me</span>
+              </label>
+              <Link to="#" className="text-sm text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+
             <Button 
               type="submit" 
-              variant="outline"
-              className="w-full h-11 border-border hover:bg-muted/50 transition-colors" 
+              className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -90,19 +161,79 @@ export default function Login() {
                   Signing in...
                 </>
               ) : (
-                'Sign In'
+                <>
+                  Sign In
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
               )}
             </Button>
-            <p className="text-sm text-muted-foreground text-center">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-foreground hover:underline font-normal transition-colors">
-                Sign up
-              </Link>
+          </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-11 border-border"
+            >
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-11 border-border"
+            >
+              <GraduationCap className="mr-2 h-4 w-4" />
+              Continue with University Account
+            </Button>
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground mt-6">
+            New to StudySync?{' '}
+            <Link to="/register" className="text-primary hover:underline font-medium">
+              Create an account
+            </Link>
+          </p>
+
+          {/* Trust Badges */}
+          <div className="mt-8 pt-6 border-t border-border">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <Users className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">50,000+ Active Students</p>
+              </div>
+              <div>
+                <GraduationCap className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Trusted by 200+ Universities</p>
+              </div>
+              <div>
+                <Shield className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">FERPA Compliant Platform</p>
+              </div>
+            </div>
+            <p className="text-xs text-center text-muted-foreground mt-4">
+              By signing in, you agree to our{' '}
+              <Link to="#" className="text-primary hover:underline">Terms of Service</Link>
+              {' '}and{' '}
+              <Link to="#" className="text-primary hover:underline">Privacy Policy</Link>
             </p>
-          </CardFooter>
-        </form>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-
