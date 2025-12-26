@@ -71,27 +71,19 @@ export const sendMessage = async (req, res, next) => {
     const { content } = req.body;
     const userId = req.user._id;
 
-    // Verify user is a member of the group
     const group = await Group.findById(groupId).lean();
     if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: 'Group not found',
-      });
+      return res.status(404).json({ success: false, message: 'Group not found' });
     }
 
     const isMember = group.members.some(
       (member) => member.user.toString() === userId.toString()
     );
-
     if (!isMember) {
-      return res.status(403).json({
-        success: false,
-        message: 'You are not a member of this group',
-      });
+      return res.status(403).json({ success: false, message: 'Not a group member' });
     }
 
-    // Create message
+    // ✅ SINGLE SOURCE OF TRUTH
     const message = await Message.create({
       content,
       sender: userId,
@@ -99,17 +91,19 @@ export const sendMessage = async (req, res, next) => {
     });
 
     await message.populate('sender', 'username email avatar');
-    
-    // Format message manually
+
     const messageObj = message.toObject();
-    messageObj._id = messageObj._id.toString();
-    messageObj.createdAt = messageObj.createdAt.toISOString();
-    messageObj.updatedAt = messageObj.updatedAt.toISOString();
+
+    // 🔥 EMIT SOCKET EVENT FROM HERE
+    console.log('🔥 EMITTING SOCKET MESSAGE:', messageObj._id);
+    const io = req.app.get('io');
+    console.log('🔥 IO EXISTS?', !!io);
+    io.to(`group:${groupId}`).emit('message:new', messageObj);
 
     res.status(201).json(messageObj);
   } catch (error) {
-    console.error('Error in message controller:', error);
     next(error);
   }
 };
+
 

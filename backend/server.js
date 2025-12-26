@@ -12,6 +12,8 @@ import { setupSocketIO } from './sockets/socketHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+// Make io available in controllers
+
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
@@ -86,7 +88,7 @@ const io = new Server(httpServer, {
 });
 
 setupSocketIO(io);
-
+app.set('io', io);
 // Middleware
 // CORS configuration - allow multiple origins in development
 const isDevelopment = process.env.NODE_ENV !== 'production';

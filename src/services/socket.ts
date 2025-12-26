@@ -38,6 +38,11 @@ class SocketService {
       this.socket.on('connect', () => {
         console.log('Socket connected');
         this.reconnectAttempts = 0;
+        // CRITICAL FIX: Rejoin group room if we were in one before reconnection
+        if (this.currentGroupId) {
+          console.log('Rejoining group after reconnect:', this.currentGroupId);
+          this.socket?.emit('join_group', { groupId: this.currentGroupId });
+        }
       });
 
       this.socket.on('disconnect', () => {
@@ -49,9 +54,54 @@ class SocketService {
         this.reconnectAttempts++;
       });
 
-      // Listen for messages
-      this.socket.on('message', (message: Message) => {
-        this.messageHandlers.forEach((handler) => handler(message));
+      // CRITICAL FIX: Listen for messages - ensure handler is always registered
+      this.socket.on('message', (message: any) => {
+        console.log('🟢 Socket.on("message") triggered:', {
+          hasId: !!message?._id,
+          hasContent: !!message?.content,
+          group: message?.group,
+          handlersCount: this.messageHandlers.length
+        });
+        
+        // CRITICAL FIX: Normalize message format - handle undefined timestamps
+        if (message && message._id) {
+          // Normalize timestamps to prevent toISOString errors
+          const normalizedMessage = {
+            ...message,
+            _id: message._id?.toString() || message._id,
+            createdAt: message.createdAt 
+              ? (typeof message.createdAt === 'string' 
+                  ? message.createdAt 
+                  : message.createdAt instanceof Date
+                  ? message.createdAt.toISOString()
+                  : message.createdAt?.toISOString?.() || new Date(message.createdAt).toISOString())
+              : new Date().toISOString(),
+            updatedAt: message.updatedAt 
+              ? (typeof message.updatedAt === 'string' 
+                  ? message.updatedAt 
+                  : message.updatedAt instanceof Date
+                  ? message.updatedAt.toISOString()
+                  : message.updatedAt?.toISOString?.() || new Date(message.updatedAt).toISOString())
+              : new Date().toISOString(),
+            content: message.content || '',
+            sender: message.sender || message.sender,
+            group: typeof message.group === 'string' 
+              ? message.group 
+              : message.group?._id?.toString() || message.group?.toString() || message.group,
+          };
+          
+          // Ensure all handlers receive the normalized message
+          this.messageHandlers.forEach((handler, index) => {
+            try {
+              console.log(`🟢 Calling handler ${index + 1}/${this.messageHandlers.length} with normalized message`);
+              handler(normalizedMessage);
+            } catch (error) {
+              console.error('❌ Error in message handler:', error);
+            }
+          });
+        } else {
+          console.warn('⚠️ Received invalid message format:', message);
+        }
       });
 
       // Listen for notifications
@@ -65,13 +115,20 @@ class SocketService {
       });
 
       // Listen for errors
-      this.socket.on('error', (error: { message: string }) => {
-        console.error('Socket error:', error.message);
+      this.socket.on('error', (error: any) => {
+        // CRITICAL FIX: Safely handle error without triggering toISOString
+        try {
+          const errorMsg = error?.message || String(error) || 'Unknown socket error';
+          console.error('Socket error:', errorMsg);
+          // Don't try to serialize the error object to avoid toISOString issues
+        } catch (err) {
+          console.error('Error handling socket error');
+        }
       });
 
       // Listen for join/leave confirmations
       this.socket.on('joined_group', (data: { groupId: string }) => {
-        console.log('Joined group:', data.groupId);
+        console.log('✅ Successfully joined group:', data.groupId);
       });
 
       this.socket.on('left_group', (data: { groupId: string }) => {
@@ -94,8 +151,23 @@ class SocketService {
       this.leaveGroup(this.currentGroupId);
     }
     this.currentGroupId = groupId;
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('join_group', { groupId });
+    
+    // CRITICAL FIX: Ensure socket is connected before joining
+    if (this.socket) {
+      if (this.socket.connected) {
+        // Socket is connected, join immediately
+        console.log('Joining group (socket connected):', groupId);
+        this.socket.emit('join_group', { groupId });
+      } else {
+        // Socket not connected yet, wait for connection
+        console.log('Socket not connected, waiting for connection to join group:', groupId);
+        this.socket.once('connect', () => {
+          console.log('Socket connected, now joining group:', groupId);
+          this.socket?.emit('join_group', { groupId });
+        });
+      }
+    } else {
+      console.warn('Socket not initialized, cannot join group:', groupId);
     }
   }
 
@@ -108,7 +180,10 @@ class SocketService {
 
   sendMessage(groupId: string, content: string) {
     if (this.socket && this.socket.connected) {
+      console.log('📤 Emitting send_message via socket:', { groupId, content: content.substring(0, 30) });
       this.socket.emit('send_message', { groupId, content });
+    } else {
+      console.warn('⚠️ Cannot send message via socket - not connected');
     }
   }
 
