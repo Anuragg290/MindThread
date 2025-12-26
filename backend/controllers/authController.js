@@ -13,7 +13,7 @@ export const register = async (req, res, next) => {
       });
     }
 
-    const { username, email, password } = req.body;
+    const { username, email, password, institution } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -25,27 +25,37 @@ export const register = async (req, res, next) => {
     }
 
     // Create user
-    const user = await User.create({
+    const userData = {
       username,
       email,
       password,
-    });
+    };
+    
+    // Add institution if provided
+    if (institution) {
+      userData.institution = institution;
+    }
+    
+    const user = await User.create(userData);
 
     // Generate token
     const token = generateToken(user._id);
 
+    // Refresh user from database to ensure all fields are populated
+    const savedUser = await User.findById(user._id).select('-password');
+    
     res.status(201).json({
       user: {
-        _id: user._id.toString(),
-        email: user.email,
-        username: user.username,
-        avatar: user.avatar,
-        institution: user.institution,
-        academicYear: user.academicYear,
-        major: user.major,
-        bio: user.bio,
-        interests: user.interests || [],
-        createdAt: user.createdAt.toISOString(),
+        _id: savedUser._id.toString(),
+        email: savedUser.email,
+        username: savedUser.username,
+        avatar: savedUser.avatar || null,
+        institution: savedUser.institution || null,
+        academicYear: savedUser.academicYear || null,
+        major: savedUser.major || null,
+        bio: savedUser.bio || null,
+        interests: savedUser.interests || [],
+        createdAt: savedUser.createdAt.toISOString(),
       },
       token,
     });

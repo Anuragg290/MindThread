@@ -22,10 +22,11 @@ import {
   MessageSquare, 
   FileText, 
   Zap,
+  TrendingUp,
+  TrendingDown,
   ArrowRight,
   Key,
   Archive,
-  TrendingUp,
   Compass
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -45,6 +46,12 @@ export default function Dashboard() {
   const [isLoadingAll, setIsLoadingAll] = useState(false);
   const [showSummaryArchive, setShowSummaryArchive] = useState(false);
   const [stats, setStats] = useState({
+    activeGroups: 0,
+    unreadMessages: 0,
+    sharedDocuments: 0,
+    aiSummaries: 0,
+  });
+  const [previousStats, setPreviousStats] = useState({
     activeGroups: 0,
     unreadMessages: 0,
     sharedDocuments: 0,
@@ -170,12 +177,55 @@ export default function Dashboard() {
         // Sort activities by timestamp (most recent first)
         activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-        setStats({
+        // Calculate actual unread messages across all groups
+        let totalUnread = 0;
+        for (const group of groups) {
+          const lastReadKey = `lastRead_${group._id}_${user?._id}`;
+          const lastReadTimestamp = localStorage.getItem(lastReadKey);
+          
+          try {
+            const messagesRes = await api.getMessages(group._id, 1, 50);
+            if (messagesRes.success && messagesRes.data) {
+              const messages = messagesRes.data.data;
+              if (lastReadTimestamp) {
+                const lastReadTime = new Date(lastReadTimestamp).getTime();
+                const unread = messages.filter(msg => {
+                  const msgTime = new Date(msg.createdAt).getTime();
+                  const senderId = typeof msg.sender === 'string' ? msg.sender : msg.sender?._id;
+                  return msgTime > lastReadTime && senderId !== user?._id;
+                });
+                totalUnread += unread.length;
+              } else {
+                // No last read timestamp, count all messages from other users
+                const unread = messages.filter(msg => {
+                  const senderId = typeof msg.sender === 'string' ? msg.sender : msg.sender?._id;
+                  return senderId !== user?._id;
+                });
+                totalUnread += unread.length;
+              }
+            }
+          } catch (error) {
+            console.error(`Error calculating unread for group ${group._id}:`, error);
+          }
+        }
+
+        // Calculate changes from previous stats
+        const newStats = {
           activeGroups: groups.length,
-          unreadMessages: totalMessages, // Simplified - can be enhanced with read/unread tracking
+          unreadMessages: totalUnread,
           sharedDocuments: totalFiles,
           aiSummaries: totalSummaries,
+        };
+        
+        // Update previous stats for next calculation (save current before updating)
+        setPreviousStats((prev) => {
+          // Only update if stats have been set before (not initial load)
+          if (stats.activeGroups > 0 || stats.unreadMessages > 0 || stats.sharedDocuments > 0 || stats.aiSummaries > 0) {
+            return stats;
+          }
+          return prev;
         });
+        setStats(newStats);
 
         setRecentActivity(activities.slice(0, 5));
       } catch (error) {
@@ -221,10 +271,18 @@ export default function Dashboard() {
                 <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
                   <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>+2</span>
-                </div>
+                {stats.activeGroups > previousStats.activeGroups && (
+                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>+{stats.activeGroups - previousStats.activeGroups}</span>
+                  </div>
+                )}
+                {stats.activeGroups < previousStats.activeGroups && (
+                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-sm">
+                    <TrendingDown className="h-4 w-4" />
+                    <span>{stats.activeGroups - previousStats.activeGroups}</span>
+                  </div>
+                )}
               </div>
               <div className="text-3xl font-bold text-foreground mb-1">{stats.activeGroups}</div>
               <div className="text-sm text-muted-foreground">Active Groups</div>
@@ -237,10 +295,18 @@ export default function Dashboard() {
                 <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
                   <MessageSquare className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
-                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>+12</span>
-                </div>
+                {stats.unreadMessages > previousStats.unreadMessages && (
+                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>+{stats.unreadMessages - previousStats.unreadMessages}</span>
+                  </div>
+                )}
+                {stats.unreadMessages < previousStats.unreadMessages && (
+                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-sm">
+                    <TrendingDown className="h-4 w-4" />
+                    <span>{stats.unreadMessages - previousStats.unreadMessages}</span>
+                  </div>
+                )}
               </div>
               <div className="text-3xl font-bold text-foreground mb-1">{stats.unreadMessages}</div>
               <div className="text-sm text-muted-foreground">Unread Messages</div>
@@ -253,10 +319,18 @@ export default function Dashboard() {
                 <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
                   <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
-                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>+8</span>
-                </div>
+                {stats.sharedDocuments > previousStats.sharedDocuments && (
+                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>+{stats.sharedDocuments - previousStats.sharedDocuments}</span>
+                  </div>
+                )}
+                {stats.sharedDocuments < previousStats.sharedDocuments && (
+                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-sm">
+                    <TrendingDown className="h-4 w-4" />
+                    <span>{stats.sharedDocuments - previousStats.sharedDocuments}</span>
+                  </div>
+                )}
               </div>
               <div className="text-3xl font-bold text-foreground mb-1">{stats.sharedDocuments}</div>
               <div className="text-sm text-muted-foreground">Shared Documents</div>
@@ -269,10 +343,18 @@ export default function Dashboard() {
                 <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
                   <Zap className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                 </div>
-                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>+5</span>
-                </div>
+                {stats.aiSummaries > previousStats.aiSummaries && (
+                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>+{stats.aiSummaries - previousStats.aiSummaries}</span>
+                  </div>
+                )}
+                {stats.aiSummaries < previousStats.aiSummaries && (
+                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-sm">
+                    <TrendingDown className="h-4 w-4" />
+                    <span>{stats.aiSummaries - previousStats.aiSummaries}</span>
+                  </div>
+                )}
               </div>
               <div className="text-3xl font-bold text-foreground mb-1">{stats.aiSummaries}</div>
               <div className="text-sm text-muted-foreground">AI Summaries</div>

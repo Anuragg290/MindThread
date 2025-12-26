@@ -36,9 +36,15 @@ export default function GroupCard({ group, onLeave, onJoin, showGroupId }: Group
   useEffect(() => {
     const fetchActivity = async () => {
       try {
-        const messagesRes = await api.getMessages(group._id, 1, 1);
+        // Get last read timestamp from localStorage
+        const lastReadKey = `lastRead_${group._id}_${user?._id}`;
+        const lastReadTimestamp = localStorage.getItem(lastReadKey);
+        
+        // Fetch recent messages to get unread count
+        const messagesRes = await api.getMessages(group._id, 1, 50);
         if (messagesRes.success && messagesRes.data && messagesRes.data.data.length > 0) {
-          const lastMessage = messagesRes.data.data[0];
+          const messages = messagesRes.data.data;
+          const lastMessage = messages[messages.length - 1]; // Last message (newest)
           setLastActivity(formatTimeAgo(lastMessage.createdAt));
           
           // Check if message is recent (within 24 hours) to determine active status
@@ -46,16 +52,41 @@ export default function GroupCard({ group, onLeave, onJoin, showGroupId }: Group
           const now = Date.now();
           const hoursSinceMessage = (now - messageTime) / (1000 * 60 * 60);
           setIsActive(hoursSinceMessage < 24);
+          
+          // Calculate unread count: messages after last read timestamp
+          if (lastReadTimestamp && user?._id) {
+            const lastReadTime = new Date(lastReadTimestamp).getTime();
+            const unreadMessages = messages.filter(msg => {
+              const msgTime = new Date(msg.createdAt).getTime();
+              // Only count messages from other users (not own messages)
+              const senderId = typeof msg.sender === 'string' ? msg.sender : msg.sender?._id;
+              return msgTime > lastReadTime && senderId !== user._id;
+            });
+            setUnreadCount(unreadMessages.length);
+          } else {
+            // If no last read timestamp, count all messages from other users
+            const unreadMessages = messages.filter(msg => {
+              const senderId = typeof msg.sender === 'string' ? msg.sender : msg.sender?._id;
+              return senderId !== user?._id;
+            });
+            setUnreadCount(unreadMessages.length);
+          }
+        } else {
+          setUnreadCount(0);
         }
       } catch (error) {
         console.error('Error fetching activity:', error);
+        setUnreadCount(0);
       }
     };
 
-    if (isMember) {
+    if (isMember && user?._id) {
       fetchActivity();
+      // Refresh unread count periodically
+      const interval = setInterval(fetchActivity, 10000); // Every 10 seconds
+      return () => clearInterval(interval);
     }
-  }, [group._id, isMember]);
+  }, [group._id, isMember, user?._id]);
 
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();

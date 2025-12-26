@@ -183,21 +183,54 @@ export default function ChatWindow({
     };
   }, [user?._id]);
 
-  // 🔥 TIER 1: Scroll to bottom ONLY if user is near bottom (ChatGPT behavior)
+  // Track if this is the initial load
+  const isInitialLoadRef = useRef(true);
+
+  // 🔥 TIER 1: Scroll to bottom on initial load, then only if user is near bottom (ChatGPT behavior)
   useEffect(() => {
     if (messagesContainerRef.current && bottomRef.current) {
       const container = messagesContainerRef.current;
-      const scrollThreshold = 150; // Only auto-scroll if within 150px of bottom
+      
+      // On initial load, always scroll to bottom
+      if (isInitialLoadRef.current && !isLoading && combinedItems.length > 0) {
+        setTimeout(() => {
+          bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+          isInitialLoadRef.current = false;
+          // Mark messages as read when viewing
+          if (user?._id) {
+            const lastMessage = combinedItems[combinedItems.length - 1];
+            if (lastMessage) {
+              localStorage.setItem(`lastRead_${groupId}_${user._id}`, lastMessage.timestamp);
+            }
+          }
+        }, 100);
+        return;
+      }
+      
+      // After initial load, only auto-scroll if near bottom
+      const scrollThreshold = 150;
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < scrollThreshold;
       
       if (isNearBottom) {
         bottomRef.current.scrollIntoView({ behavior: 'smooth' });
         setShowScrollToBottom(false);
+        // Mark messages as read when scrolling to bottom
+        if (user?._id && combinedItems.length > 0) {
+          const lastMessage = combinedItems[combinedItems.length - 1];
+          if (lastMessage) {
+            localStorage.setItem(`lastRead_${groupId}_${user._id}`, lastMessage.timestamp);
+          }
+        }
       }
     }
-  }, [combinedItems]);
+  }, [combinedItems, isLoading, groupId, user?._id]);
 
-  // Handle scroll position to show/hide scroll-to-bottom button
+  // Reset initial load flag when groupId changes
+  useEffect(() => {
+    isInitialLoadRef.current = true;
+  }, [groupId]);
+
+  // Handle scroll position to show/hide scroll-to-bottom button and mark messages as read
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -206,6 +239,14 @@ export default function ChatWindow({
       const scrollThreshold = 200;
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < scrollThreshold;
       setShowScrollToBottom(!isNearBottom);
+      
+      // Mark messages as read when user scrolls to bottom
+      if (isNearBottom && user?._id && combinedItems.length > 0) {
+        const lastMessage = combinedItems[combinedItems.length - 1];
+        if (lastMessage) {
+          localStorage.setItem(`lastRead_${groupId}_${user._id}`, lastMessage.timestamp);
+        }
+      }
     };
 
     // Check initial state after a brief delay to ensure DOM is ready
@@ -213,7 +254,7 @@ export default function ChatWindow({
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [combinedItems]);
+  }, [combinedItems, groupId, user?._id]);
 
   // Scroll to bottom function
   const scrollToBottom = () => {
