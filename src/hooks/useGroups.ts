@@ -35,7 +35,7 @@ export function useGroups() {
         title: 'Success',
         description: 'Group created successfully',
       });
-      return { success: true };
+      return { success: true, data: response.data };
     }
     toast({
       title: 'Error',

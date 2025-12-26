@@ -3,13 +3,38 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGroups } from '@/hooks/useGroups';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import GroupCard from '@/components/GroupCard';
 import CreateGroupModal from '@/components/CreateGroupModal';
 import JoinGroupModal from '@/components/JoinGroupModal';
-import { BookOpen, Plus, UserPlus, LogOut, Search, Loader2, Compass } from 'lucide-react';
+import RecentActivity from '@/components/RecentActivity';
+import SummaryArchiveModal from '@/components/SummaryArchiveModal';
+import { 
+  BookOpen, 
+  Plus, 
+  UserPlus, 
+  LogOut, 
+  Search, 
+  Loader2, 
+  Users, 
+  MessageSquare, 
+  FileText, 
+  Zap,
+  Bell,
+  Home,
+  FolderOpen,
+  User,
+  ArrowRight,
+  Key,
+  Archive,
+  TrendingUp,
+  Compass
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
-import { Group } from '@/types';
+import { Group, Message, FileDocument, Summary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
@@ -18,29 +43,34 @@ export default function Dashboard() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [joinModalOpen, setJoinModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [showDiscover, setShowDiscover] = useState(false);
   const [allGroups, setAllGroups] = useState<Group[]>([]);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
-  const [showDiscover, setShowDiscover] = useState(false);
+  const [showSummaryArchive, setShowSummaryArchive] = useState(false);
+  const [stats, setStats] = useState({
+    activeGroups: 0,
+    unreadMessages: 0,
+    sharedDocuments: 0,
+    aiSummaries: 0,
+  });
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const filteredGroups = groups.filter((group) =>
-    group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    group.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredAllGroups = allGroups.filter((group) =>
-    group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    group.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const discoverableGroups = filteredAllGroups.filter((group) => !group.isMember);
-
-  useEffect(() => {
-    if (showDiscover) {
-      fetchAllGroups();
+  const filteredGroups = groups.filter((group) => {
+    const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (activeTab === 'active') {
+      // Filter for groups with recent activity (within last 24 hours)
+      return matchesSearch;
+    } else if (activeTab === 'upcoming') {
+      // For now, just show all groups (can be enhanced with session scheduling)
+      return matchesSearch;
     }
-  }, [showDiscover]);
+    return matchesSearch;
+  });
 
   const fetchAllGroups = async () => {
     setIsLoadingAll(true);
@@ -57,105 +87,414 @@ export default function Dashboard() {
     setIsLoadingAll(false);
   };
 
-  const handleJoinGroup = async (groupId: string) => {
-    const result = await joinGroup(groupId);
-    if (result.success) {
-      await refetch();
+  const filteredAllGroups = allGroups.filter((group) => {
+    const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.description.toLowerCase().includes(searchQuery.toLowerCase());
+    // Only show groups user is not a member of
+    const isMember = group.members.some((m) => m.user._id === user?._id);
+    return matchesSearch && !isMember;
+  });
+
+  useEffect(() => {
       if (showDiscover) {
-        await fetchAllGroups();
-      }
+      fetchAllGroups();
     }
-  };
+  }, [showDiscover]);
+
+  // Fetch stats and recent activity
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        let totalMessages = 0;
+        let totalFiles = 0;
+        let totalSummaries = 0;
+        const activities: any[] = [];
+
+        // Fetch data from all groups
+        for (const group of groups) {
+          try {
+            // Get messages
+            const messagesRes = await api.getMessages(group._id, 1, 100);
+            if (messagesRes.success && messagesRes.data) {
+              totalMessages += messagesRes.data.data.length;
+              // Add recent messages to activity
+              messagesRes.data.data.slice(0, 3).forEach((msg: Message) => {
+                activities.push({
+                  type: 'message',
+                  user: msg.sender,
+                  content: msg.content,
+                  group: group,
+                  timestamp: msg.createdAt,
+                });
+              });
+            }
+
+            // Get files
+            const filesRes = await api.getFiles(group._id);
+            if (filesRes.success && filesRes.data) {
+              totalFiles += filesRes.data.length;
+              // Add recent files to activity
+              filesRes.data.slice(0, 2).forEach((file: FileDocument) => {
+                activities.push({
+                  type: 'file',
+                  user: file.uploader,
+                  content: file.originalName,
+                  group: group,
+                  timestamp: file.createdAt,
+                });
+              });
+            }
+
+            // Get summaries
+            const summariesRes = await api.getSummaries(group._id);
+            if (summariesRes.success && summariesRes.data) {
+              totalSummaries += summariesRes.data.length;
+              // Add recent summaries to activity
+              summariesRes.data.slice(0, 2).forEach((summary: Summary) => {
+                activities.push({
+                  type: 'summary',
+                  user: summary.generatedBy,
+                  content: summary.content,
+                  group: group,
+                  timestamp: summary.createdAt,
+                });
+              });
+            }
+          } catch (error) {
+            console.error(`Error fetching data for group ${group._id}:`, error);
+          }
+        }
+
+        // Sort activities by timestamp (most recent first)
+        activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        setStats({
+          activeGroups: groups.length,
+          unreadMessages: totalMessages, // Simplified - can be enhanced with read/unread tracking
+          sharedDocuments: totalFiles,
+          aiSummaries: totalSummaries,
+        });
+
+        setRecentActivity(activities.slice(0, 10));
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
+    if (groups.length > 0) {
+      fetchStats();
+    }
+  }, [groups]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds} sec ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hour${Math.floor(diffInSeconds / 3600) > 1 ? 's' : ''} ago`;
+    return `${Math.floor(diffInSeconds / 86400)} day${Math.floor(diffInSeconds / 86400) > 1 ? 's' : ''} ago`;
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header - Clean, minimal design */}
-      <header className="border-b border-border bg-card sticky top-0 z-10">
+      {/* Top Navigation Bar */}
+      <header className="border-b border-border bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-muted rounded-xl">
-                <BookOpen className="h-5 w-5 text-foreground" />
+              <div className="p-2 bg-primary rounded-lg">
+                <BookOpen className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-lg font-medium text-foreground">Virtual Study Group</h1>
-                <p className="text-xs text-muted-foreground">Welcome, {user?.username}</p>
-              </div>
+              <h1 className="text-xl font-semibold text-foreground">StudySync</h1>
             </div>
+            <nav className="hidden md:flex items-center gap-6">
+              <button 
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md bg-muted/50"
+              >
+                <Home className="h-4 w-4" />
+                Dashboard
+              </button>
+              <button 
+                onClick={() => {
+                  setShowDiscover(true);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-muted/50"
+              >
+                <Users className="h-4 w-4" />
+                Active Groups
+              </button>
+              <button 
+                onClick={() => navigate('/dashboard?tab=documents')}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-muted/50"
+              >
+                <FolderOpen className="h-4 w-4" />
+                Documents
+              </button>
+              <button 
+                onClick={() => navigate('/dashboard?tab=profile')}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-muted/50"
+              >
+                <User className="h-4 w-4" />
+                Profile
+              </button>
+            </nav>
+            <div className="flex items-center gap-4">
+              <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
+                <Bell className="h-5 w-5 text-foreground" />
+                <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-semibold">2</span>
+              </button>
             <Button 
               variant="ghost" 
               onClick={handleLogout}
-              className="hover:bg-muted/50 transition-colors"
+                className="hover:bg-muted transition-colors"
             >
               <LogOut className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Logout</span>
             </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content - Improved spacing and layout */}
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 max-w-7xl">
-        {/* Actions Bar - Better visual hierarchy */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-10">
+      {/* Main Content */}
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
+        {/* Dashboard Header */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-foreground mb-2">Dashboard</h2>
+          <p className="text-muted-foreground">Welcome back! Here's what's happening with your study groups.</p>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-card border-border">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                  <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>+2</span>
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-foreground mb-1">{stats.activeGroups}</div>
+              <div className="text-sm text-muted-foreground">Active Groups</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                  <MessageSquare className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>+12</span>
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-foreground mb-1">{stats.unreadMessages}</div>
+              <div className="text-sm text-muted-foreground">Unread Messages</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                  <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>+8</span>
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-foreground mb-1">{stats.sharedDocuments}</div>
+              <div className="text-sm text-muted-foreground">Shared Documents</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                  <Zap className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>+5</span>
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-foreground mb-1">{stats.aiSummaries}</div>
+              <div className="text-sm text-muted-foreground">AI Summaries</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Action Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card 
+            className="bg-card border-border hover:bg-muted/50 transition-colors cursor-pointer"
+            onClick={() => setCreateModalOpen(true)}
+          >
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Plus className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Create New Group</h3>
+                  <p className="text-sm text-muted-foreground">Start a new study group and invite members.</p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-card border-border hover:bg-muted/50 transition-colors cursor-pointer"
+            onClick={() => setJoinModalOpen(true)}
+          >
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Key className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Join with Code</h3>
+                  <p className="text-sm text-muted-foreground">Enter an invitation code to join a group.</p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-card border-border hover:bg-muted/50 transition-colors cursor-pointer"
+            onClick={() => setShowSummaryArchive(true)}
+          >
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Archive className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">AI Summary Archive</h3>
+                  <p className="text-sm text-muted-foreground">View all AI-generated summaries.</p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search Section */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search groups..."
+              placeholder="Search study groups..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 bg-card border-border focus:border-border focus:ring-2 focus:ring-foreground/10 transition-all"
+              className="pl-10"
             />
           </div>
-          <div className="flex gap-2.5 flex-wrap">
+        </div>
+
+        {/* Two Column Layout: Your Study Groups and Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Your Study Groups Section */}
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-foreground">
+                {showDiscover ? 'Discover Groups' : 'Your Study Groups'}
+              </h3>
+              <div className="flex gap-2">
+                {!showDiscover && (
             <Button 
-              onClick={() => setCreateModalOpen(true)}
-              variant="outline"
-              className="h-11 border-border hover:bg-muted/50 transition-colors"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Group
+                    onClick={() => setCreateModalOpen(true)}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    New Group
             </Button>
+                )}
             <Button 
-              variant="outline" 
-              onClick={() => setShowDiscover(!showDiscover)}
-              className="h-11 border-border hover:bg-muted/50 transition-colors"
-            >
-              <Compass className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">{showDiscover ? 'My Groups' : 'Discover Groups'}</span>
-              <span className="sm:hidden">{showDiscover ? 'My' : 'Discover'}</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setJoinModalOpen(true)}
-              className="h-11 border-border hover:bg-muted/50 transition-colors"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Join by ID</span>
-              <span className="sm:hidden">Join</span>
+                  onClick={() => {
+                    setShowDiscover(!showDiscover);
+                    if (!showDiscover) {
+                      fetchAllGroups();
+                    }
+                  }}
+                  size="sm"
+                  variant={showDiscover ? "default" : "outline"}
+                  className="gap-2"
+                >
+                  {showDiscover ? 'My Groups' : 'Discover'}
             </Button>
           </div>
         </div>
 
-        {/* Section Headers and Content */}
-        {!showDiscover ? (
-          <>
-            <div className="mb-6">
-              <h2 className="text-2xl font-medium text-foreground mb-1">My Groups</h2>
-              <p className="text-sm text-muted-foreground">Groups you're part of</p>
+            {!showDiscover && (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+                <TabsList>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="active">Active</TabsTrigger>
+                  <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
+
+            {showDiscover ? (
+              isLoadingAll ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : filteredAllGroups.length === 0 ? (
+                <div className="text-center py-20 px-4">
+                  <div className="mx-auto w-20 h-20 bg-muted/50 rounded-2xl flex items-center justify-center mb-5">
+                    <Users className="h-10 w-10 text-muted-foreground/60" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-2 text-foreground">No groups to discover</h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    {searchQuery
+                      ? 'No groups match your search'
+                      : 'All available groups have been joined or no groups exist yet'}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {filteredAllGroups.map((group) => (
+                    <GroupCard 
+                      key={group._id} 
+                      group={group} 
+                      onJoin={async (groupId) => {
+                        await joinGroup(groupId);
+                        await refetch();
+                        await fetchAllGroups();
+                      }} 
+                      showGroupId={true}
+                    />
+                  ))}
             </div>
-            {isLoading ? (
+              )
+            ) : isLoading ? (
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : filteredGroups.length === 0 ? (
               <div className="text-center py-20 px-4">
-                <div className="mx-auto w-20 h-20 bg-muted/50 rounded-2xl flex items-center justify-center mb-5 shadow-sm">
+                <div className="mx-auto w-20 h-20 bg-muted/50 rounded-2xl flex items-center justify-center mb-5">
                   <BookOpen className="h-10 w-10 text-muted-foreground/60" />
                 </div>
                 <h3 className="text-lg font-medium mb-2 text-foreground">No groups yet</h3>
@@ -165,65 +504,37 @@ export default function Dashboard() {
                     : 'Create or join a study group to get started'}
                 </p>
                 {!searchQuery && (
-                  <div className="flex justify-center gap-3 flex-wrap">
                     <Button 
                       onClick={() => setCreateModalOpen(true)}
                       variant="outline"
-                      className="border-border hover:bg-muted/50 transition-colors"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Create Group
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowDiscover(true)}
-                      className="border-border hover:bg-muted/50 transition-colors"
-                    >
-                      <Compass className="h-4 w-4 mr-2" />
-                      Discover Groups
-                    </Button>
-                  </div>
                 )}
               </div>
             ) : (
-              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 {filteredGroups.map((group) => (
-                  <GroupCard key={group._id} group={group} onLeave={leaveGroup} onJoin={handleJoinGroup} />
+                  <GroupCard 
+                    key={group._id} 
+                    group={group} 
+                    onLeave={leaveGroup} 
+                    onJoin={async (groupId) => {
+                      await joinGroup(groupId);
+                    }} 
+                  />
                 ))}
               </div>
             )}
-          </>
-        ) : (
-          <>
-            <div className="mb-6">
-              <h2 className="text-2xl font-medium text-foreground mb-1">Discover Groups</h2>
-              <p className="text-sm text-muted-foreground">Find and join new study groups</p>
             </div>
-            {isLoadingAll ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+
+          {/* Recent Activity Section */}
+          <div className="lg:col-span-1">
+            <h3 className="text-xl font-semibold text-foreground mb-4">Recent Activity</h3>
+            <RecentActivity activities={recentActivity} />
               </div>
-            ) : discoverableGroups.length === 0 ? (
-              <div className="text-center py-20 px-4">
-                <div className="mx-auto w-20 h-20 bg-muted/50 rounded-2xl flex items-center justify-center mb-5 shadow-sm">
-                  <Compass className="h-10 w-10 text-muted-foreground/60" />
-                </div>
-                <h3 className="text-lg font-medium mb-2 text-foreground">No groups to discover</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  {searchQuery
-                    ? 'No groups match your search'
-                    : 'All available groups have been joined or no groups exist yet'}
-                </p>
               </div>
-            ) : (
-              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                {discoverableGroups.map((group) => (
-                  <GroupCard key={group._id} group={group} onJoin={handleJoinGroup} showGroupId />
-                ))}
-              </div>
-            )}
-          </>
-        )}
       </main>
 
       {/* Modals */}
@@ -236,6 +547,10 @@ export default function Dashboard() {
         open={joinModalOpen}
         onOpenChange={setJoinModalOpen}
         onSubmit={joinGroup}
+      />
+      <SummaryArchiveModal
+        open={showSummaryArchive}
+        onOpenChange={setShowSummaryArchive}
       />
     </div>
   );

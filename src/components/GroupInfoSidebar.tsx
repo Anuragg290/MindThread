@@ -16,7 +16,9 @@ import {
   Trash2,
   Loader2,
   Sun,
-  Moon
+  Moon,
+  Copy,
+  Check
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,6 +51,8 @@ export default function GroupInfoSidebar({
   const [group, setGroup] = useState<Group | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [showGroupCode, setShowGroupCode] = useState(false);
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,6 +83,17 @@ export default function GroupInfoSidebar({
 
   const handleSectionClick = (section: string) => {
     setActiveSection(activeSection === section ? null : section);
+  };
+
+  const handleCopyGroupCode = async () => {
+    if (!group) return;
+    try {
+      await navigator.clipboard.writeText(group._id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy group code:', error);
+    }
   };
 
   return (
@@ -130,6 +145,44 @@ export default function GroupInfoSidebar({
                         <p className="text-sm text-foreground">{group.description}</p>
                       </div>
                     )}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-muted-foreground">Group Code</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowGroupCode(!showGroupCode)}
+                          className="h-7 text-xs"
+                        >
+                          {showGroupCode ? 'Hide' : 'Show'}
+                        </Button>
+                      </div>
+                      {showGroupCode && (
+                        <>
+                          <div className="flex items-center gap-2 p-2 bg-muted rounded-lg border border-border">
+                            <code className="flex-1 text-xs font-mono text-foreground break-all">
+                              {group._id}
+                            </code>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleCopyGroupCode}
+                              className="h-7 w-7 p-0 flex-shrink-0"
+                              title="Copy group code"
+                            >
+                              {copied ? (
+                                <Check className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Share this code to invite others
+                          </p>
+                        </>
+                      )}
+                    </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Created</p>
                       <p className="text-sm text-foreground">
