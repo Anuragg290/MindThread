@@ -360,6 +360,28 @@ export default function GroupChat() {
                 });
                 const isProcessing = false; // Files are uploaded directly, no processing needed
                 
+                const handleView = () => {
+                  // Open in new tab for viewing
+                  window.open(file.url, '_blank', 'noopener,noreferrer');
+                };
+
+                const handleDownload = () => {
+                  // Create a temporary anchor element to trigger download
+                  const link = document.createElement('a');
+                  link.href = file.url;
+                  link.download = file.originalName;
+                  link.target = '_blank';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                };
+
+                const handleGenerateSummary = async () => {
+                  if (groupId) {
+                    await generateDocumentSummary(file._id);
+                  }
+                };
+                
                 return (
                   <Card key={file._id} className="border-border hover:bg-muted/30 transition-colors">
                     <CardContent className="p-3">
@@ -378,41 +400,51 @@ export default function GroupChat() {
                                 <AvatarImage src={uploader.avatar} alt={uploader.username} />
                                 <AvatarFallback className="text-xs">{uploader.username[0]?.toUpperCase()}</AvatarFallback>
                               </Avatar>
-                              <span className="text-xs text-muted-foreground">{uploader.username}</span>
+                              <span className="text-xs text-muted-foreground truncate">{uploader.username}</span>
                             </div>
                           )}
                           {isProcessing && (
-                            <Badge variant="secondary" className="text-xs mb-2">
+                            <Badge variant="secondary" className="text-xs mb-2 inline-flex items-center">
                               Processing...
                             </Badge>
                           )}
                           {hasSummary && !isProcessing && (
-                            <Badge variant="secondary" className="text-xs mb-2">
+                            <Badge variant="secondary" className="text-xs mb-2 inline-flex items-center">
                               <Sparkles className="h-3 w-3 mr-1" />
                               AI Summary Ready
                             </Badge>
                           )}
-                          <div className="flex items-center gap-2">
-                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => window.open(file.url, '_blank')}>
+                          <div className="flex items-center gap-1 flex-wrap mt-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 px-2 text-xs flex-shrink-0" 
+                              onClick={handleView}
+                            >
                               View
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => window.open(file.url, '_blank')}>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 px-2 text-xs flex-shrink-0" 
+                              onClick={handleDownload}
+                            >
                               <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                              className="h-7 text-xs"
-                              onClick={() => generateDocumentSummary(file._id)}
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 px-2 text-xs flex-shrink-0"
+                              onClick={handleGenerateSummary}
                               disabled={isGenerating || hasSummary}
-                        >
+                            >
                               <Sparkles className="h-3 w-3 mr-1" />
                               {hasSummary ? 'Summary Ready' : 'AI Summary'}
-                        </Button>
+                            </Button>
                           </div>
                         </div>
-                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 );
