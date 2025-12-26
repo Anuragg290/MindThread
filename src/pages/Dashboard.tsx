@@ -11,21 +11,17 @@ import CreateGroupModal from '@/components/CreateGroupModal';
 import JoinGroupModal from '@/components/JoinGroupModal';
 import RecentActivity from '@/components/RecentActivity';
 import SummaryArchiveModal from '@/components/SummaryArchiveModal';
+import Navbar from '@/components/Navbar';
 import { 
   BookOpen, 
   Plus, 
   UserPlus, 
-  LogOut, 
   Search, 
   Loader2, 
   Users, 
   MessageSquare, 
   FileText, 
   Zap,
-  Bell,
-  Home,
-  FolderOpen,
-  User,
   ArrowRight,
   Key,
   Archive,
@@ -38,7 +34,7 @@ import { Group, Message, FileDocument, Summary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { groups, isLoading, createGroup, joinGroup, leaveGroup, refetch } = useGroups();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [joinModalOpen, setJoinModalOpen] = useState(false);
@@ -113,12 +109,12 @@ export default function Dashboard() {
         // Fetch data from all groups
         for (const group of groups) {
           try {
-            // Get messages
-            const messagesRes = await api.getMessages(group._id, 1, 100);
+            // Get messages - fetch more to get recent ones
+            const messagesRes = await api.getMessages(group._id, 1, 50);
             if (messagesRes.success && messagesRes.data) {
               totalMessages += messagesRes.data.data.length;
-              // Add recent messages to activity
-              messagesRes.data.data.slice(0, 3).forEach((msg: Message) => {
+              // Add recent messages to activity (messages are already sorted by date desc)
+              messagesRes.data.data.slice(0, 10).forEach((msg: Message) => {
                 activities.push({
                   type: 'message',
                   user: msg.sender,
@@ -133,8 +129,11 @@ export default function Dashboard() {
             const filesRes = await api.getFiles(group._id);
             if (filesRes.success && filesRes.data) {
               totalFiles += filesRes.data.length;
-              // Add recent files to activity
-              filesRes.data.slice(0, 2).forEach((file: FileDocument) => {
+              // Sort files by date and add recent ones to activity
+              const sortedFiles = [...filesRes.data].sort((a, b) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              );
+              sortedFiles.slice(0, 5).forEach((file: FileDocument) => {
                 activities.push({
                   type: 'file',
                   user: file.uploader,
@@ -149,8 +148,11 @@ export default function Dashboard() {
             const summariesRes = await api.getSummaries(group._id);
             if (summariesRes.success && summariesRes.data) {
               totalSummaries += summariesRes.data.length;
-              // Add recent summaries to activity
-              summariesRes.data.slice(0, 2).forEach((summary: Summary) => {
+              // Sort summaries by date and add recent ones to activity
+              const sortedSummaries = [...summariesRes.data].sort((a, b) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              );
+              sortedSummaries.slice(0, 5).forEach((summary: Summary) => {
                 activities.push({
                   type: 'summary',
                   user: summary.generatedBy,
@@ -175,7 +177,7 @@ export default function Dashboard() {
           aiSummaries: totalSummaries,
         });
 
-        setRecentActivity(activities.slice(0, 10));
+        setRecentActivity(activities.slice(0, 5));
       } catch (error) {
         console.error('Error fetching stats:', error);
       }
@@ -186,10 +188,6 @@ export default function Dashboard() {
     }
   }, [groups]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
@@ -205,65 +203,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Navigation Bar */}
-      <header className="border-b border-border bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary rounded-lg">
-                <BookOpen className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <h1 className="text-xl font-semibold text-foreground">StudySync</h1>
-            </div>
-            <nav className="hidden md:flex items-center gap-6">
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md bg-muted/50"
-              >
-                <Home className="h-4 w-4" />
-                Dashboard
-              </button>
-              <button 
-                onClick={() => {
-                  setShowDiscover(true);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-muted/50"
-              >
-                <Users className="h-4 w-4" />
-                Active Groups
-              </button>
-              <button 
-                onClick={() => navigate('/dashboard?tab=documents')}
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-muted/50"
-              >
-                <FolderOpen className="h-4 w-4" />
-                Documents
-              </button>
-              <button 
-                onClick={() => navigate('/dashboard?tab=profile')}
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-muted/50"
-              >
-                <User className="h-4 w-4" />
-                Profile
-              </button>
-            </nav>
-            <div className="flex items-center gap-4">
-              <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
-                <Bell className="h-5 w-5 text-foreground" />
-                <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-semibold">2</span>
-              </button>
-            <Button 
-              variant="ghost" 
-              onClick={handleLogout}
-                className="hover:bg-muted transition-colors"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar onShowDiscover={() => setShowDiscover(true)} />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
@@ -350,8 +290,8 @@ export default function Dashboard() {
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-primary/10 rounded-lg">
                   <Plus className="h-6 w-6 text-primary" />
-                </div>
-                <div>
+              </div>
+              <div>
                   <h3 className="font-semibold text-foreground mb-1">Create New Group</h3>
                   <p className="text-sm text-muted-foreground">Start a new study group and invite members.</p>
                 </div>
@@ -372,8 +312,8 @@ export default function Dashboard() {
                 <div>
                   <h3 className="font-semibold text-foreground mb-1">Join with Code</h3>
                   <p className="text-sm text-muted-foreground">Enter an invitation code to join a group.</p>
-                </div>
               </div>
+            </div>
               <ArrowRight className="h-5 w-5 text-muted-foreground" />
             </CardContent>
           </Card>
@@ -391,7 +331,7 @@ export default function Dashboard() {
                   <h3 className="font-semibold text-foreground mb-1">AI Summary Archive</h3>
                   <p className="text-sm text-muted-foreground">View all AI-generated summaries.</p>
                 </div>
-              </div>
+          </div>
               <ArrowRight className="h-5 w-5 text-muted-foreground" />
             </CardContent>
           </Card>
@@ -421,10 +361,10 @@ export default function Dashboard() {
               <div className="flex gap-2">
                 {!showDiscover && (
             <Button 
-                    onClick={() => setCreateModalOpen(true)}
+              onClick={() => setCreateModalOpen(true)}
                     size="sm"
                     className="gap-2"
-                  >
+            >
                     <Plus className="h-4 w-4" />
                     New Group
             </Button>
@@ -532,7 +472,7 @@ export default function Dashboard() {
           {/* Recent Activity Section */}
           <div className="lg:col-span-1">
             <h3 className="text-xl font-semibold text-foreground mb-4">Recent Activity</h3>
-            <RecentActivity activities={recentActivity} />
+            <RecentActivity activities={recentActivity.slice(0, 5)} />
               </div>
               </div>
       </main>

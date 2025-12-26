@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, FileText, Zap, Users, Calendar, Loader2 } from 'lucide-react';
+import { MessageSquare, FileText, Zap, Users, Calendar } from 'lucide-react';
 import { User, Group } from '@/types';
 
 interface Activity {
@@ -13,9 +13,10 @@ interface Activity {
 
 interface RecentActivityProps {
   activities: Activity[];
+  showCard?: boolean;
 }
 
-export default function RecentActivity({ activities }: RecentActivityProps) {
+export default function RecentActivity({ activities, showCard = true }: RecentActivityProps) {
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
     const time = new Date(timestamp);
@@ -61,7 +62,6 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
 
   const getActivityText = (activity: Activity): string => {
     const userName = getUserName(activity.user);
-    const groupName = getGroupName(activity.group);
     
     switch (activity.type) {
       case 'message':
@@ -81,14 +81,12 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
 
   const getActivityAvatar = (activity: Activity) => {
     if (activity.type === 'summary') {
-      // Return AI Assistant icon for summaries
       return (
         <div className="h-10 w-10 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
           <Zap className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
         </div>
       );
     }
-    // Return user avatar for other activities
     const user = typeof activity.user === 'string' ? null : activity.user;
     const avatarUrl = getUserAvatar(activity.user);
     const initials = user ? (user.username?.[0] || user.email?.[0] || 'U').toUpperCase() : 'U';
@@ -102,7 +100,50 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
     );
   };
 
-  if (activities.length === 0) {
+  // Limit to latest 5 activities
+  const displayActivities = activities.slice(0, 5);
+
+  const content = (
+    <div className="space-y-3">
+      {displayActivities.length === 0 ? (
+        <div className="text-center py-8">
+          <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/40 mb-3" />
+          <p className="text-sm text-muted-foreground">No recent activity</p>
+        </div>
+      ) : (
+        displayActivities.map((activity, index) => {
+          return (
+            <div key={index} className="flex gap-3 pb-3 border-b border-border last:border-0 last:pb-0">
+              {getActivityAvatar(activity)}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <p className="text-sm text-foreground">
+                    {getActivityText(activity)}
+                    <span className="font-medium ml-1">{getGroupName(activity.group)}</span>
+                  </p>
+                  <div className="flex-shrink-0">
+                    {getActivityIcon(activity.type)}
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-1">
+                  {activity.content}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatTimeAgo(activity.timestamp)}
+                </p>
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+
+  if (!showCard) {
+    return <div className="p-4">{content}</div>;
+  }
+
+  if (displayActivities.length === 0) {
     return (
       <Card className="bg-card border-border">
         <CardContent className="p-6">
@@ -118,31 +159,8 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
   return (
     <Card className="bg-card border-border">
       <CardContent className="p-4">
-        <div className="space-y-4 max-h-[600px] overflow-y-auto scrollbar-thin">
-          {activities.map((activity, index) => {
-            return (
-              <div key={index} className="flex gap-3 pb-4 border-b border-border last:border-0 last:pb-0">
-                {getActivityAvatar(activity)}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="text-sm text-foreground">
-                      {getActivityText(activity)}
-                      <span className="font-medium ml-1">{getGroupName(activity.group)}</span>
-                    </p>
-                    <div className="flex-shrink-0">
-                      {getActivityIcon(activity.type)}
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-1">
-                    {activity.content}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatTimeAgo(activity.timestamp)}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+        <div className="max-h-[600px] overflow-y-auto scrollbar-thin">
+          {content}
         </div>
       </CardContent>
     </Card>
