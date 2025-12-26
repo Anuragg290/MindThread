@@ -70,7 +70,49 @@ export default function FileMessageBubble({ file }: FileMessageBubbleProps) {
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
-    // 🔒 unchanged download logic
+    
+    if (!file.url) {
+      console.error('File URL is missing');
+      return;
+    }
+
+    // Cloudinary URLs are direct download links
+    // For local URLs (backward compatibility), use the API endpoint
+    if (file.url.startsWith('http://') || file.url.startsWith('https://')) {
+      // Direct Cloudinary URL or external URL - open in new tab for download
+      const link = document.createElement('a');
+      link.href = file.url;
+      link.download = file.originalName || 'download';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // Local URL (backward compatibility) - fetch with auth token
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(file.url, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        
+        if (!response.ok) throw new Error('Failed to download file');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.originalName || 'download';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error downloading file:', error);
+        // Fallback: open in new tab
+        window.open(file.url, '_blank');
+      }
+    }
   };
 
   return (

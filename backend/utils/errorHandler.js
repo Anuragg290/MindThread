@@ -35,9 +35,17 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal server error',
+    ...(isDevelopment && {
+      error: err.name,
+      stack: err.stack,
+      path: req.path,
+      method: req.method,
+    }),
   });
 };
 

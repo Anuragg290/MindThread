@@ -1,26 +1,9 @@
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs/promises';
-import { fileURLToPath } from 'url';
+import { cloudinaryStorage } from '../config/cloudinary.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Ensure upload directory exists
-const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '../uploads');
-fs.mkdir(uploadDir, { recursive: true }).catch(console.error);
-
-// Configure storage
-const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  },
-});
+// CRITICAL: Use Cloudinary storage instead of disk storage
+// Files are uploaded directly to Cloudinary, not saved locally
+const storage = cloudinaryStorage;
 
 // File filter
 const fileFilter = (req, file, cb) => {
