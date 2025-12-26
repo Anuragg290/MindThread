@@ -352,12 +352,12 @@ export default function GroupChat() {
                 <select
                   value={documentFilter}
                   onChange={(e) => setDocumentFilter(e.target.value)}
-                  className="flex-1 h-9 px-3 text-sm border border-border rounded-md bg-background text-foreground"
+                  className="w-full h-9 px-2 text-sm border border-border rounded-md bg-background text-foreground"
                 >
                   <option value="all">All Types</option>
                   <option value="pdf">PDF</option>
                   <option value="docx">DOCX</option>
-                  <option value="image">Images</option>
+                  <option value="txt">TXT</option>
                 </select>
               <Button 
                   size="sm"
