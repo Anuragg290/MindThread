@@ -29,12 +29,25 @@ import {
   Sparkles,
   Sun,
   Moon,
-  LogOut
+  LogOut,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
-import { Group, FileDocument, Message } from '@/types';
+import { Group, FileDocument, Message, Summary } from '@/types';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Loader2 } from 'lucide-react';
 
 export default function GroupChat() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -43,7 +56,10 @@ export default function GroupChat() {
   const { groups, leaveGroup } = useGroups();
   const { messages, isLoading: messagesLoading, hasMore, sendMessage, loadMore, addReaction } = useMessages(groupId!);
   const { files, isLoading: filesLoading, isUploading, uploadFile, deleteFile } = useFiles(groupId!);
-  const { summaries, generateDocumentSummary, isGenerating } = useSummaries(groupId!);
+  const { summaries, generateDocumentSummary, generateChatSummary, deleteSummary, isGenerating, refetch: refetchSummaries } = useSummaries(groupId!);
+  const [showSummariesModal, setShowSummariesModal] = useState(false);
+  const [summaryToDelete, setSummaryToDelete] = useState<string | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<string | null>(null);
   const [group, setGroup] = useState<Group | null>(null);
   const [isLoadingGroup, setIsLoadingGroup] = useState(true);
   const [documentSearch, setDocumentSearch] = useState('');
@@ -261,16 +277,46 @@ export default function GroupChat() {
                 <h2 className="text-lg font-semibold text-foreground">Group Chat</h2>
                 <Badge variant="secondary" className="text-xs">{onlineMembers} members online</Badge>
         </div>
-              <Button variant="ghost" size="icon">
-                <Search className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => generateChatSummary(50)}
+                  disabled={isGenerating}
+                  className="h-8"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      Generate Chat Summary
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowSummariesModal(true)}
+                  className="h-8"
+                >
+                  <Sparkles className="h-4 w-4 mr-1" />
+                  View Summaries
+                </Button>
+                <Button variant="ghost" size="icon">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
           <div className="flex-1 min-h-0">
               <ChatWindow 
                 groupId={groupId!}
                 messages={messages}
-              files={[]}
+                files={files}
                 isLoading={messagesLoading} 
                 hasMore={hasMore} 
                 onSendMessage={sendMessage} 
@@ -345,6 +391,8 @@ export default function GroupChat() {
             ) : (
               filteredDocuments.map((file) => {
                 const uploader = typeof file.uploader === 'string' ? null : file.uploader;
+                const uploaderId = typeof file.uploader === 'string' ? file.uploader : file.uploader?._id;
+                const isOwnFile = uploaderId === user?._id;
                 const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
                 const fileExtension = file.originalName.split('.').pop()?.toUpperCase() || 'FILE';
                 const hasSummary = summaries.some(s => {
@@ -359,28 +407,6 @@ export default function GroupChat() {
                   return false;
                 });
                 const isProcessing = false; // Files are uploaded directly, no processing needed
-                
-                const handleView = () => {
-                  // Open in new tab for viewing
-                  window.open(file.url, '_blank', 'noopener,noreferrer');
-                };
-
-                const handleDownload = () => {
-                  // Create a temporary anchor element to trigger download
-                  const link = document.createElement('a');
-                  link.href = file.url;
-                  link.download = file.originalName;
-                  link.target = '_blank';
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                };
-
-                const handleGenerateSummary = async () => {
-                  if (groupId) {
-                    await generateDocumentSummary(file._id);
-                  }
-                };
                 
                 return (
                   <Card key={file._id} className="border-border hover:bg-muted/30 transition-colors">
@@ -400,11 +426,11 @@ export default function GroupChat() {
                                 <AvatarImage src={uploader.avatar} alt={uploader.username} />
                                 <AvatarFallback className="text-xs">{uploader.username[0]?.toUpperCase()}</AvatarFallback>
                               </Avatar>
-                              <span className="text-xs text-muted-foreground truncate">{uploader.username}</span>
+                              <span className="text-xs text-muted-foreground">{uploader.username}</span>
                             </div>
                           )}
                           {isProcessing && (
-                            <Badge variant="secondary" className="text-xs mb-2 inline-flex items-center">
+                            <Badge variant="secondary" className="text-xs mb-2">
                               Processing...
                             </Badge>
                           )}
@@ -414,37 +440,164 @@ export default function GroupChat() {
                               AI Summary Ready
                             </Badge>
                           )}
-                          <div className="flex items-center gap-1 flex-wrap mt-2">
+                          <div className="flex items-center gap-1.5 flex-wrap mt-2">
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="h-7 px-2 text-xs flex-shrink-0" 
-                              onClick={handleView}
+                              className="h-7 px-2 text-xs whitespace-nowrap" 
+                              onClick={async () => {
+                                // Handle different file types appropriately
+                                if (file.mimeType === 'application/pdf') {
+                                  // PDFs: Use Google Docs Viewer
+                                  const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(file.url)}&embedded=true`;
+                                  window.open(viewerUrl, '_blank', 'noopener,noreferrer');
+                                } else if (file.mimeType === 'text/plain') {
+                                  // TXT files: Fetch and display in new tab with formatted HTML
+                                  try {
+                                    const response = await fetch(file.url);
+                                    const text = await response.text();
+                                    // Create an HTML page with the text content
+                                    const htmlContent = `
+                                      <!DOCTYPE html>
+                                      <html>
+                                        <head>
+                                          <meta charset="UTF-8">
+                                          <title>${file.originalName}</title>
+                                          <style>
+                                            body {
+                                              font-family: 'Courier New', monospace;
+                                              max-width: 1200px;
+                                              margin: 0 auto;
+                                              padding: 20px;
+                                              background: #fff;
+                                              color: #000;
+                                              line-height: 1.6;
+                                              white-space: pre-wrap;
+                                              word-wrap: break-word;
+                                            }
+                                            @media (prefers-color-scheme: dark) {
+                                              body {
+                                                background: #1a1a1a;
+                                                color: #e0e0e0;
+                                              }
+                                            }
+                                          </style>
+                                        </head>
+                                        <body>${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</body>
+                                      </html>
+                                    `;
+                                    const blob = new Blob([htmlContent], { type: 'text/html' });
+                                    const url = URL.createObjectURL(blob);
+                                    const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+                                    // Clean up after window closes or after delay
+                                    if (newWindow) {
+                                      newWindow.addEventListener('beforeunload', () => {
+                                        URL.revokeObjectURL(url);
+                                      });
+                                      setTimeout(() => URL.revokeObjectURL(url), 60000); // Clean up after 1 minute
+                                    }
+                                  } catch (error) {
+                                    console.error('Error viewing text file:', error);
+                                    // Fallback: open directly
+                                    window.open(file.url, '_blank', 'noopener,noreferrer');
+                                  }
+                                } else if (file.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                                  // DOCX files: Try Office Online viewer, fallback to download
+                                  // Office Online requires the file to be publicly accessible
+                                  const officeViewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(file.url)}`;
+                                  const viewerWindow = window.open(officeViewerUrl, '_blank', 'noopener,noreferrer');
+                                  // If Office viewer fails, fallback to direct download
+                                  if (!viewerWindow) {
+                                    // Fallback: trigger download
+                                    const link = document.createElement('a');
+                                    link.href = file.url;
+                                    link.download = file.originalName;
+                                    link.target = '_blank';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                  }
+                                } else if (file.mimeType.startsWith('image/')) {
+                                  // Images can be viewed directly
+                                  window.open(file.url, '_blank', 'noopener,noreferrer');
+                                } else {
+                                  // For other files, try to open directly
+                                  window.open(file.url, '_blank', 'noopener,noreferrer');
+                                }
+                              }}
                             >
                               View
                             </Button>
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="h-7 px-2 text-xs flex-shrink-0" 
-                              onClick={handleDownload}
+                              className="h-7 px-2 text-xs whitespace-nowrap" 
+                              onClick={async () => {
+                                // Force download by fetching as blob to preserve filename and extension
+                                try {
+                                  const response = await fetch(file.url);
+                                  if (!response.ok) throw new Error('Failed to fetch file');
+                                  
+                                  const blob = await response.blob();
+                                  const url = window.URL.createObjectURL(blob);
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  // Use original filename which should include extension
+                                  link.download = file.originalName || 'download';
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  window.URL.revokeObjectURL(url);
+                                } catch (error) {
+                                  console.error('Error downloading file:', error);
+                                  // Fallback: direct download with proper filename
+                                  const link = document.createElement('a');
+                                  link.href = file.url;
+                                  // Use original filename which should include extension
+                                  link.download = file.originalName || 'download';
+                                  link.target = '_blank';
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }
+                              }}
                             >
                               <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="h-7 px-2 text-xs flex-shrink-0"
-                              onClick={handleGenerateSummary}
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                              className="h-7 px-2 text-xs whitespace-nowrap"
+                              onClick={async () => {
+                                if (groupId && !isGenerating && !hasSummary) {
+                                  const result = await generateDocumentSummary(file._id);
+                                  if (result?.success) {
+                                    // Refresh summaries to show the new one
+                                    await refetchSummaries();
+                                  }
+                                }
+                              }}
                               disabled={isGenerating || hasSummary}
                             >
                               <Sparkles className="h-3 w-3 mr-1" />
                               {hasSummary ? 'Summary Ready' : 'AI Summary'}
-                            </Button>
+                        </Button>
+                        {isOwnFile && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-7 px-2 text-xs whitespace-nowrap text-destructive hover:text-destructive"
+                            onClick={() => setFileToDelete(file._id)}
+                            title="Delete document"
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Delete
+                          </Button>
+                        )}
                           </div>
                         </div>
-                      </div>
+                        </div>
                     </CardContent>
                   </Card>
                 );
@@ -559,6 +712,174 @@ export default function GroupChat() {
           </div>
         </div>
       </div>
+
+      {/* Summaries Modal */}
+      <Dialog open={showSummariesModal} onOpenChange={setShowSummariesModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-500" />
+              AI Summaries
+            </DialogTitle>
+            <DialogDescription>
+              View all AI-generated summaries for this group.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto py-4 space-y-4">
+            <div className="flex justify-end mb-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => generateChatSummary(50)} 
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Generate Chat Summary
+                  </>
+                )}
+              </Button>
+            </div>
+            {summaries.length === 0 ? (
+              <div className="text-center py-10">
+                <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground mb-4">No summaries yet for this group.</p>
+                <p className="text-xs text-muted-foreground">
+                  Use the button above to generate a chat summary.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {summaries.map((summary) => (
+                  <Card key={summary._id} className="border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          {summary.type === 'document' ? (
+                            <FileText className="h-4 w-4 text-purple-600" />
+                          ) : (
+                            <MessageSquare className="h-4 w-4 text-blue-600" />
+                          )}
+                          <span className="text-sm font-medium text-foreground">
+                            {summary.type === 'document' ? 'Document Summary' : 'Chat Summary'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(summary.createdAt), 'MMM d, yyyy HH:mm')}
+                          </span>
+                        <Button 
+                          variant="ghost" 
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            onClick={() => setSummaryToDelete(summary._id)}
+                            title="Delete summary"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-foreground mb-3 whitespace-pre-wrap break-words">
+                        {summary.content}
+                      </p>
+                      {summary.keyTopics && summary.keyTopics.length > 0 && (
+                        <div className="mb-2">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Key Topics:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {summary.keyTopics.map((topic, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {topic}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {summary.actionItems && summary.actionItems.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Action Items:</p>
+                          <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">
+                            {summary.actionItems.map((item, idx) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Summary Confirmation Dialog with Glass Theme */}
+      <AlertDialog open={summaryToDelete !== null} onOpenChange={(open) => !open && setSummaryToDelete(null)}>
+        <AlertDialogContent className="backdrop-blur-xl bg-background/80 border-border/50 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Delete Summary
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to delete this summary? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-background/50 backdrop-blur-sm border-border/50">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (summaryToDelete) {
+                  await deleteSummary(summaryToDelete);
+                  setSummaryToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete File Confirmation Dialog with Glass Theme */}
+      <AlertDialog open={fileToDelete !== null} onOpenChange={(open) => !open && setFileToDelete(null)}>
+        <AlertDialogContent className="backdrop-blur-xl bg-background/80 border-border/50 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Delete Document
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to delete this document? This action cannot be undone and the file will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-background/50 backdrop-blur-sm border-border/50">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (fileToDelete) {
+                  await deleteFile(fileToDelete);
+                  setFileToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
