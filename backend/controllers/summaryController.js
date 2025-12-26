@@ -5,6 +5,8 @@ import Group from '../models/Group.js';
 import { generateSummary } from '../services/geminiService.js';
 import { validationResult } from 'express-validator';
 import fs from 'fs/promises';
+import https from 'https';
+import http from 'http';
 
 export const getSummaries = async (req, res, next) => {
   try {
@@ -212,20 +214,83 @@ export const generateDocumentSummary = async (req, res, next) => {
       });
     }
 
-    // Read file content
+    // Read file content from Cloudinary URL
     let fileContent = '';
     try {
-      const fileBuffer = await fs.readFile(file.path);
+      let fileBuffer;
       
-      // For text files, read as text
-      if (file.mimeType.startsWith('text/')) {
-        fileContent = fileBuffer.toString('utf-8');
+      // Check if file is stored in Cloudinary (URL) or locally (path)
+      if (file.url && (file.url.startsWith('http://') || file.url.startsWith('https://'))) {
+        // File is in Cloudinary - download it
+        fileBuffer = await new Promise((resolve, reject) => {
+          const url = new URL(file.url);
+          const client = url.protocol === 'https:' ? https : http;
+          
+          client.get(file.url, (response) => {
+            if (response.statusCode !== 200) {
+              reject(new Error(`Failed to download file: ${response.statusCode}`));
+              return;
+            }
+            
+            const chunks = [];
+            response.on('data', (chunk) => chunks.push(chunk));
+            response.on('end', () => resolve(Buffer.concat(chunks)));
+            response.on('error', reject);
+          }).on('error', reject);
+        });
       } else {
-        // For other files, you might want to use a library to extract text
-        // For now, we'll return an error for non-text files
+        // File is stored locally (backward compatibility)
+        fileBuffer = await fs.readFile(file.path);
+      }
+      
+      // Extract text based on file type
+      if (file.mimeType.startsWith('text/')) {
+        // Text files - read directly
+        fileContent = fileBuffer.toString('utf-8');
+      } else if (file.mimeType === 'application/pdf') {
+        // PDF files - try to use pdf-parse if available
+        try {
+          const pdfParse = await import('pdf-parse').catch(() => null);
+          if (pdfParse && pdfParse.default) {
+            const pdfData = await pdfParse.default(fileBuffer);
+            fileContent = pdfData.text;
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: 'PDF parsing requires pdf-parse package. Please install it: npm install pdf-parse',
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing PDF:', error);
+          return res.status(500).json({
+            success: false,
+            message: 'Error parsing PDF: ' + (error.message || 'Unknown error'),
+          });
+        }
+      } else if (file.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        // DOCX files - try to use mammoth if available
+        try {
+          const mammoth = await import('mammoth').catch(() => null);
+          if (mammoth && mammoth.default) {
+            const result = await mammoth.default.extractRawText({ buffer: fileBuffer });
+            fileContent = result.value;
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: 'DOCX parsing requires mammoth package. Please install it: npm install mammoth',
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing DOCX:', error);
+          return res.status(500).json({
+            success: false,
+            message: 'Error parsing DOCX: ' + (error.message || 'Unknown error'),
+          });
+        }
+      } else {
         return res.status(400).json({
           success: false,
-          message: 'Only text files (.txt) are supported for summarization. PDF and DOCX support coming soon.',
+          message: 'Unsupported file type. Only TXT, PDF, and DOCX files are supported.',
         });
       }
     } catch (error) {
