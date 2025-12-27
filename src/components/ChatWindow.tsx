@@ -459,8 +459,8 @@ export default function ChatWindow({
         - Not full-width, subtle border
         - ChatGPT-like monochrome design
       */}
-      <div className="flex-shrink-0 pb-4 pt-2 border-t border-border bg-background">
-        <div className="max-w-[700px] mx-auto px-4 pr-4 lg:pr-6">
+      <div className="flex-shrink-0 pb-4 pt-2 border-t border-border bg-background sticky bottom-0 z-10">
+        <div className="max-w-[700px] mx-auto px-3 sm:px-4 lg:px-4 lg:pr-6">
           {/* 🔥 TIER 2: Reply preview above input */}
           {replyingTo && (
             <div className="mb-2 px-3 py-2 bg-muted/30 border border-border rounded-lg flex items-start gap-2">
