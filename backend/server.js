@@ -83,8 +83,8 @@ const httpServer = createServer(app);
 // ----------------------------------------------------
 
 const socketOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(',')
-  : ['http://localhost:5173', 'http://localhost:8080', 'https://mind-thread-psi.vercel.app/'];
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+  : ['http://localhost:5173', 'http://localhost:8080', 'https://mind-thread-psi.vercel.app'];
 
 const io = new Server(httpServer, {
   cors: {
@@ -119,6 +119,21 @@ app.use(express.urlencoded({ extended: true }));
 // ----------------------------------------------------
 // Routes
 // ----------------------------------------------------
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'MindThread API Server',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      groups: '/api/groups',
+    },
+    documentation: 'API is running. Check /api/health for server status.',
+  });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);
