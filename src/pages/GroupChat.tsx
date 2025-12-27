@@ -269,8 +269,8 @@ export default function GroupChat() {
       </header>
 
       {/* Mobile: Tab-based Layout */}
-      <div className="flex-1 flex flex-col lg:hidden overflow-hidden min-h-0">
-        <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as 'chat' | 'documents' | 'members')} className="flex-1 flex flex-col overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col lg:hidden overflow-hidden min-h-0 h-full">
+        <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as 'chat' | 'documents' | 'members')} className="flex-1 flex flex-col overflow-hidden min-h-0 h-full">
           <div className="flex-shrink-0 border-b border-border bg-card px-2 sm:px-4">
             <TabsList className="grid w-full grid-cols-3 h-10">
               <TabsTrigger value="chat" className="text-xs sm:text-sm">
@@ -286,9 +286,9 @@ export default function GroupChat() {
                 <span className="hidden sm:inline">Members</span>
               </TabsTrigger>
             </TabsList>
-        </div>
+          </div>
 
-          <TabsContent value="chat" className="flex-1 flex flex-col m-0 mt-0 overflow-hidden min-h-0 data-[state=active]:flex">
+          <TabsContent value="chat" className="!mt-0 flex-1 flex flex-col overflow-hidden min-h-0 h-full data-[state=active]:flex">
             <div className="flex-shrink-0 border-b border-border bg-card px-3 sm:px-4 py-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -328,7 +328,7 @@ export default function GroupChat() {
                 </div>
               </div>
             </div>
-            <div className="flex-1 min-h-0 relative overflow-hidden h-full">
+            <div className="flex-1 min-h-0 relative overflow-hidden">
               <ChatWindow 
                 groupId={groupId!}
                 messages={messages}
@@ -344,7 +344,7 @@ export default function GroupChat() {
             </div>
           </TabsContent>
 
-          <TabsContent value="documents" className="flex-1 flex flex-col m-0 mt-0 overflow-hidden min-h-0 data-[state=active]:flex">
+          <TabsContent value="documents" className="!mt-0 flex-1 flex flex-col overflow-hidden min-h-0 h-full data-[state=active]:flex">
             <div className="flex-shrink-0 border-b border-border bg-card px-3 sm:px-4 py-3">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -564,7 +564,7 @@ export default function GroupChat() {
             </div>
           </TabsContent>
 
-          <TabsContent value="members" className="flex-1 flex flex-col m-0 mt-0 overflow-hidden min-h-0 data-[state=active]:flex">
+          <TabsContent value="members" className="!mt-0 flex-1 flex flex-col overflow-hidden min-h-0 h-full data-[state=active]:flex">
             <div className="flex-shrink-0 border-b border-border bg-card px-3 sm:px-4 py-3">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">

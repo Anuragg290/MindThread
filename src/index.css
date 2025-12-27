@@ -123,7 +123,18 @@
 /* =========================
    SCROLLBAR (SUBTLE)
    ========================= */
+/* Fix for mobile tabs - ensure TabsContent takes full height */
 @layer utilities {
+  [data-radix-tabs-content][data-state="active"] {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    margin-top: 0 !important;
+  }
+  
+  [data-radix-tabs-content] {
+    margin-top: 0 !important;
+  }
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
   }
