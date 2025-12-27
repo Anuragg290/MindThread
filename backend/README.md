@@ -1,4 +1,4 @@
-# Study Smart AI - Backend
+# MindThread - Backend
 
 ## MongoDB Setup
 
@@ -28,7 +28,7 @@
 
 3. **Configure connection in `.env`**:
    ```env
-   MONGODB_URI=mongodb://localhost:27017/study-smart-ai
+   MONGODB_URI=mongodb://localhost:27017/mindthread
    ```
 
 ### Option 2: MongoDB Atlas (Cloud)
@@ -39,7 +39,7 @@
 
 3. **Configure in `.env`**:
    ```env
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/study-smart-ai?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/mindthread?retryWrites=true&w=majority
    ```
 
 ### Option 3: Docker MongoDB
@@ -49,7 +49,7 @@
 docker run -d -p 27017:27017 --name mongodb mongo:latest
 
 # Connection string
-MONGODB_URI=mongodb://localhost:27017/study-smart-ai
+MONGODB_URI=mongodb://localhost:27017/mindthread
 ```
 
 ## Environment Variables
@@ -58,7 +58,7 @@ Create a `.env` file in the `backend` directory with:
 
 ```env
 # MongoDB Connection
-MONGODB_URI=mongodb://localhost:27017/study-smart-ai
+MONGODB_URI=mongodb://localhost:27017/mindthread
 
 # Server Configuration
 PORT=5001
@@ -106,7 +106,7 @@ npm start
 
 2. **Test connection manually**:
    ```bash
-   mongosh mongodb://localhost:27017/study-smart-ai
+   mongosh mongodb://localhost:27017/mindthread
    ```
 
 3. **Check MongoDB logs**:

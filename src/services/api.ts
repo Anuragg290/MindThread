@@ -42,9 +42,10 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        console.error(`API Error [${response.status}]:`, data);
         return {
           success: false,
-          error: data.message || 'An error occurred',
+          error: data.message || data.error || 'An error occurred',
         };
       }
 
@@ -74,6 +75,8 @@ class ApiService {
       body: JSON.stringify({ username, email, password, institution }),
     });
   }
+
+
 
   async getProfile(): Promise<ApiResponse<User>> {
     return this.request('/auth/profile');

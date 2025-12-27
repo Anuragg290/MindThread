@@ -5,7 +5,7 @@ import { socketService } from '@/services/socket';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (username: string, email: string, password: string, institution?: string) => Promise<{ success: boolean; error?: string }>;
+  register: (username: string, email: string, password: string, institution?: string) => Promise<{ success: boolean; error?: string; data?: { user: User; token: string } }>;
   logout: () => void;
   updateUser: (user: User) => void;
 }
@@ -68,17 +68,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await api.register(username, email, password, institution);
     if (response.success && response.data) {
       const { user, token } = response.data;
+      // Auto-login after registration
       api.setToken(token);
-      socketService.connect(token);
       setAuthState({
         user,
         token,
         isAuthenticated: true,
         isLoading: false,
       });
-      return { success: true };
+      return { success: true, data: { user, token } };
     }
-    return { success: false, error: response.error };
+    console.error('Registration failed:', response.error);
+    return { success: false, error: response.error || 'Registration failed' };
   }, []);
 
   const updateUser = useCallback((user: User) => {

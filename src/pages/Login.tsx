@@ -40,7 +40,7 @@ export default function Login() {
             <div className="p-2 bg-white/20 rounded-lg">
               <BookOpen className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-2xl font-semibold text-white">StudySync</h1>
+            <h1 className="text-2xl font-semibold text-white">MindThread</h1>
           </div>
           
           <h2 className="text-4xl font-bold text-white mb-4">
@@ -58,29 +58,13 @@ export default function Login() {
               </Avatar>
               <div>
                 <p className="text-white mb-3 italic">
-                  "StudySync transformed how our study group collaborates. The AI summaries save us hours of review time!"
+                  "MindThread transformed how our study group collaborates. The AI summaries save us hours of review time!"
                 </p>
                 <p className="text-sm text-blue-100">
                   Sarah Chen, Biology Major, Stanford University.
                 </p>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Statistics */}
-        <div className="flex gap-8 text-white">
-          <div>
-            <div className="text-3xl font-bold">50K+</div>
-            <div className="text-sm text-blue-100">Active Users</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold">200+</div>
-            <div className="text-sm text-blue-100">Universities</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold">1M+</div>
-            <div className="text-sm text-blue-100">Documents</div>
           </div>
         </div>
       </div>
@@ -203,7 +187,7 @@ export default function Login() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            New to StudySync?{' '}
+            New to MindThread?{' '}
             <Link to="/register" className="text-primary hover:underline font-medium">
               Create an account
             </Link>
@@ -214,11 +198,11 @@ export default function Login() {
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <Users className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">50,000+ Active Students</p>
+                <p className="text-xs text-muted-foreground">Active Students</p>
               </div>
               <div>
                 <GraduationCap className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">Trusted by 200+ Universities</p>
+                <p className="text-xs text-muted-foreground">Trusted by Universities</p>
               </div>
               <div>
                 <Shield className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />

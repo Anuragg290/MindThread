@@ -32,7 +32,7 @@ export default function Navbar({ onShowDiscover }: NavbarProps) {
             <div className="p-2 bg-primary rounded-lg">
               <BookOpen className="h-5 w-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-semibold text-foreground">StudySync</h1>
+            <h1 className="text-xl font-semibold text-foreground">MindThread</h1>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <button 

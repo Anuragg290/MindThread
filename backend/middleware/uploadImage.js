@@ -8,7 +8,7 @@ const imageStorage = new CloudinaryStorage({
   params: async (req, file) => {
     const publicId = `profile-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     return {
-      folder: 'study-smart-ai/profiles',
+      folder: 'mindthread/profiles',
       resource_type: 'image',
       public_id: publicId,
       format: 'jpg',

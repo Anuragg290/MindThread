@@ -1,6 +1,12 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, getProfile, updateProfile, uploadAvatar } from '../controllers/authController.js';
+import { 
+  register, 
+  login, 
+  getProfile, 
+  updateProfile, 
+  uploadAvatar
+} from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 import { uploadImage } from '../middleware/uploadImage.js';
 

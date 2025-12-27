@@ -151,7 +151,7 @@ export const uploadFile = async (req, res, next) => {
         if (cloudName) {
           // Construct Cloudinary URL manually
           // Format: https://res.cloudinary.com/{cloud_name}/raw/upload/{folder}/{public_id}
-          const folder = 'study-smart-ai';
+          const folder = 'mindthread';
           cloudinaryUrl = `https://res.cloudinary.com/${cloudName}/raw/upload/${folder}/${req.file.public_id}`;
           console.log('🔧 Constructed Cloudinary URL manually:', cloudinaryUrl);
         }
@@ -275,7 +275,7 @@ export const deleteFile = async (req, res, next) => {
       
       // If file.url is a Cloudinary URL, extract public_id
       // Cloudinary URLs format: 
-      // https://res.cloudinary.com/cloud_name/raw/upload/v123456789/study-smart-ai/public_id
+      // https://res.cloudinary.com/cloud_name/raw/upload/v123456789/mindthread/public_id
       // OR: https://res.cloudinary.com/cloud_name/raw/upload/v123456789/public_id
       if (file.url && file.url.includes('cloudinary.com')) {
         try {
@@ -302,7 +302,7 @@ export const deleteFile = async (req, res, next) => {
       }
       
       // Delete from Cloudinary using public_id
-      // Include folder path if it exists (e.g., 'study-smart-ai/public_id')
+      // Include folder path if it exists (e.g., 'mindthread/public_id')
       await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
       console.log(`✅ Deleted file from Cloudinary: ${publicId}`);
     } catch (err) {

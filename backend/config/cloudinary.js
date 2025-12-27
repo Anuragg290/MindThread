@@ -69,7 +69,7 @@ cloudinaryStorage = new CloudinaryStorage({
   params: async (req, file) => {
     const publicId = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     return {
-      folder: 'study-smart-ai', // Optional: organize files in a folder
+      folder: 'mindthread', // Optional: organize files in a folder
       resource_type: 'raw', // Use 'raw' for PDF, DOCX, TXT files
       public_id: publicId, // Unique filename
       // Preserve original filename in metadata

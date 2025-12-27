@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +21,8 @@ export default function Register() {
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  
+  const { register: registerUser } = useAuth();
   const navigate = useNavigate();
 
   const fields = [
@@ -57,14 +59,9 @@ export default function Register() {
 
     setIsLoading(true);
     // Use fullName as username for now
-    const result = await register(fullName, email, password, institution);
-    if (result.success) {
-      // If profile photo was uploaded, upload it after registration
-      if (profilePhoto) {
-        // Profile photo will be uploaded from Profile page after user is created
-        // For now, just navigate to dashboard
-      }
-      setIsLoading(false);
+    const result = await registerUser(fullName, email, password, institution);
+    if (result.success && result.data) {
+      // Registration successful - user is automatically logged in via AuthContext
       navigate('/dashboard');
     } else {
       setError(result.error || 'Registration failed');
@@ -137,7 +134,6 @@ export default function Register() {
                 required
                 className="h-11"
               />
-              <p className="text-xs text-muted-foreground">Use your institutional email for verification.</p>
             </div>
 
             <div className="space-y-2">
