@@ -322,7 +322,7 @@ export default function ChatWindow({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-background relative">
+    <div className="flex flex-col h-full w-full bg-background relative min-h-0">
       {/* 
         LAYOUT: ChatGPT-like scrolling
         - Messages area scrolls independently

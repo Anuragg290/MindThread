@@ -328,7 +328,7 @@ export default function GroupChat() {
                 </div>
               </div>
             </div>
-            <div className="flex-1 min-h-0 relative overflow-hidden h-full">
+            <div className="flex-1 min-h-0 relative">
               <ChatWindow 
                 groupId={groupId!}
                 messages={messages}
