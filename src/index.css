@@ -130,10 +130,19 @@
     flex: 1 1 0% !important;
     min-height: 0 !important;
     margin-top: 0 !important;
+    height: 100% !important;
   }
   
   [data-radix-tabs-content] {
     margin-top: 0 !important;
+  }
+  
+  /* Ensure ChatWindow and its children take full height on mobile */
+  @media (max-width: 1023px) {
+    [data-radix-tabs-content][data-state="active"] > div {
+      height: 100% !important;
+      min-height: 0 !important;
+    }
   }
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;

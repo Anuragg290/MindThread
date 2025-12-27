@@ -3,7 +3,7 @@ import { Message, FileDocument } from '@/types';
 
 // Socket.io client wrapper for real-time functionality
 // Configure your socket server URL here
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
 
 type MessageHandler = (message: Message) => void;
 type FileHandler = (file: FileDocument) => void;

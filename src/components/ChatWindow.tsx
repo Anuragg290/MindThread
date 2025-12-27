@@ -322,7 +322,7 @@ export default function ChatWindow({
   };
 
   return (
-    <div className="flex flex-col h-full bg-background relative">
+    <div className="flex flex-col h-full w-full bg-background relative">
       {/* 
         LAYOUT: ChatGPT-like scrolling
         - Messages area scrolls independently
@@ -333,7 +333,7 @@ export default function ChatWindow({
       {/* Messages Area - Scrollable container */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 scrollbar-thin pb-24 lg:pb-6"
+        className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 scrollbar-thin pb-24 lg:pb-6"
       >
         <div className="max-w-7xl pr-4 lg:pr-6">
           {hasMore && (
