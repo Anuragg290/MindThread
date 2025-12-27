@@ -65,7 +65,7 @@ export default function Register() {
       navigate('/dashboard');
     } else {
       setError(result.error || 'Registration failed');
-      setIsLoading(false);
+    setIsLoading(false);
     }
   };
 
@@ -155,13 +155,13 @@ export default function Register() {
             <div className="space-y-2">
               <Label htmlFor="password" className="text-foreground">Password *</Label>
               <div className="relative">
-                <Input
-                  id="password"
+              <Input
+                id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Create a strong password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
                   className="h-11 pr-10"
                 />
                 <button
@@ -177,13 +177,13 @@ export default function Register() {
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-foreground">Confirm Password *</Label>
               <div className="relative">
-                <Input
-                  id="confirmPassword"
+              <Input
+                id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Re-enter your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
                   className="h-11 pr-10"
                 />
                 <button
@@ -261,11 +261,11 @@ export default function Register() {
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Already have an account?{' '}
+              Already have an account?{' '}
             <Link to="/login" className="text-primary hover:underline font-medium">
-              Sign in
-            </Link>
-          </p>
+                Sign in
+              </Link>
+            </p>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">

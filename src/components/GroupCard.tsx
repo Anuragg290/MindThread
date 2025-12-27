@@ -153,7 +153,7 @@ export default function GroupCard({ group, onLeave, onJoin, showGroupId }: Group
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-semibold text-foreground truncate">
-                {group.name}
+              {group.name}
               </h3>
               {isMember && unreadCount > 0 && (
                 <Badge className="bg-blue-600 text-white h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
@@ -184,9 +184,9 @@ export default function GroupCard({ group, onLeave, onJoin, showGroupId }: Group
                   <span className="text-xs text-muted-foreground font-mono flex-1 truncate">
                     {group._id}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                <Button
+                  variant="ghost"
+                  size="sm"
                     onClick={handleCopyGroupCode}
                     className="h-6 w-6 p-0 hover:bg-muted"
                     title="Copy group code"
@@ -194,9 +194,9 @@ export default function GroupCard({ group, onLeave, onJoin, showGroupId }: Group
                     {copied ? (
                       <Check className="h-3 w-3 text-green-600" />
                     ) : (
-                      <Copy className="h-3 w-3" />
+                  <Copy className="h-3 w-3" />
                     )}
-                  </Button>
+                </Button>
                 </div>
               )}
             </div>
@@ -249,39 +249,39 @@ export default function GroupCard({ group, onLeave, onJoin, showGroupId }: Group
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between">
-          {isMember ? (
-            <>
-              <Button
+            {isMember ? (
+              <>
+                <Button
                 onClick={handleOpenGroup}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-              >
+                >
                 Open Group
                 <ArrowRight className="h-4 w-4" />
-              </Button>
-              {!isOwner && onLeave && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onLeave(group._id);
-                  }}
-                  className="hover:bg-muted transition-colors"
-                >
-                  <LogOut className="h-4 w-4" />
                 </Button>
-              )}
-            </>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={handleJoin}
+                {!isOwner && onLeave && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLeave(group._id);
+                    }}
+                  className="hover:bg-muted transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                )}
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={handleJoin}
               className="w-full border-border hover:bg-muted/50 transition-colors"
-            >
+              >
               <UserPlus className="h-4 w-4 mr-2" />
               Join Group
-            </Button>
-          )}
+              </Button>
+            )}
         </div>
       </CardContent>
     </Card>

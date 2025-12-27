@@ -54,11 +54,11 @@ export default function CreateGroupModal({ open, onOpenChange, onSubmit }: Creat
   };
 
   const handleClose = () => {
-    setName('');
-    setDescription('');
+      setName('');
+      setDescription('');
     setCreatedGroup(null);
     setCopied(false);
-    onOpenChange(false);
+      onOpenChange(false);
   };
 
   return (
@@ -66,51 +66,51 @@ export default function CreateGroupModal({ open, onOpenChange, onSubmit }: Creat
       <DialogContent>
         {!createdGroup ? (
           <>
-            <DialogHeader>
-              <DialogTitle>Create Study Group</DialogTitle>
-              <DialogDescription>
-                Create a new study group and invite members to join.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="groupName">Group Name</Label>
-                  <Input
-                    id="groupName"
-                    placeholder="e.g., Computer Science 101"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="What is this study group about?"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
+        <DialogHeader>
+          <DialogTitle>Create Study Group</DialogTitle>
+          <DialogDescription>
+            Create a new study group and invite members to join.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="groupName">Group Name</Label>
+              <Input
+                id="groupName"
+                placeholder="e.g., Computer Science 101"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="What is this study group about?"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
                 <Button type="button" variant="outline" onClick={handleClose}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading || !name.trim()}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Group'
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading || !name.trim()}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Group'
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
           </>
         ) : (
           <>

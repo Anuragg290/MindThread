@@ -403,7 +403,7 @@ export default function Dashboard() {
           <Card 
             className="bg-card border-border hover:bg-muted/50 transition-colors cursor-pointer"
             onClick={() => setShowSummaryArchive(true)}
-          >
+            >
             <CardContent className="p-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-primary/10 rounded-lg">
@@ -461,7 +461,7 @@ export default function Dashboard() {
                   size="sm"
                   variant={showDiscover ? "default" : "outline"}
                   className="gap-2"
-                >
+            >
                   {showDiscover ? 'My Groups' : 'Discover'}
             </Button>
           </div>

@@ -45,7 +45,7 @@ export const register = async (req, res, next) => {
 
     // Refresh user from database to ensure all fields are populated
     const savedUser = await User.findById(user._id).select('-password');
-    
+
     res.status(201).json({
       user: {
         _id: savedUser._id.toString(),
