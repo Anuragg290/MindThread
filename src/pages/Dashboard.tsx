@@ -258,127 +258,127 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
         {/* Dashboard Header */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Dashboard</h2>
-          <p className="text-muted-foreground">Welcome back! Here's what's happening with your study groups.</p>
+        <div className="mb-4 md:mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">Dashboard</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Welcome back! Here's what's happening with your study groups.</p>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-6 md:mb-8">
           <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                  <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <CardContent className="p-3 md:p-6">
+              <div className="flex items-center justify-between mb-2 md:mb-4">
+                <div className="p-2 md:p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                  <Users className="h-4 w-4 md:h-6 md:w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 {stats.activeGroups > previousStats.activeGroups && (
-                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>+{stats.activeGroups - previousStats.activeGroups}</span>
+                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs md:text-sm">
+                    <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">+{stats.activeGroups - previousStats.activeGroups}</span>
                   </div>
                 )}
                 {stats.activeGroups < previousStats.activeGroups && (
-                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-sm">
-                    <TrendingDown className="h-4 w-4" />
-                    <span>{stats.activeGroups - previousStats.activeGroups}</span>
+                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs md:text-sm">
+                    <TrendingDown className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">{stats.activeGroups - previousStats.activeGroups}</span>
                   </div>
                 )}
               </div>
-              <div className="text-3xl font-bold text-foreground mb-1">{stats.activeGroups}</div>
-              <div className="text-sm text-muted-foreground">Active Groups</div>
+              <div className="text-xl md:text-3xl font-bold text-foreground mb-0.5 md:mb-1">{stats.activeGroups}</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Active Groups</div>
             </CardContent>
           </Card>
 
           <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <MessageSquare className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <CardContent className="p-3 md:p-6">
+              <div className="flex items-center justify-between mb-2 md:mb-4">
+                <div className="p-2 md:p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                  <MessageSquare className="h-4 w-4 md:h-6 md:w-6 text-green-600 dark:text-green-400" />
                 </div>
                 {stats.unreadMessages > previousStats.unreadMessages && (
-                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>+{stats.unreadMessages - previousStats.unreadMessages}</span>
+                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs md:text-sm">
+                    <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">+{stats.unreadMessages - previousStats.unreadMessages}</span>
                   </div>
                 )}
                 {stats.unreadMessages < previousStats.unreadMessages && (
-                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-sm">
-                    <TrendingDown className="h-4 w-4" />
-                    <span>{stats.unreadMessages - previousStats.unreadMessages}</span>
+                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs md:text-sm">
+                    <TrendingDown className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">{stats.unreadMessages - previousStats.unreadMessages}</span>
                   </div>
                 )}
               </div>
-              <div className="text-3xl font-bold text-foreground mb-1">{stats.unreadMessages}</div>
-              <div className="text-sm text-muted-foreground">Unread Messages</div>
+              <div className="text-xl md:text-3xl font-bold text-foreground mb-0.5 md:mb-1">{stats.unreadMessages}</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Unread Messages</div>
             </CardContent>
           </Card>
 
           <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                  <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            <CardContent className="p-3 md:p-6">
+              <div className="flex items-center justify-between mb-2 md:mb-4">
+                <div className="p-2 md:p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                  <FileText className="h-4 w-4 md:h-6 md:w-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 {stats.sharedDocuments > previousStats.sharedDocuments && (
-                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>+{stats.sharedDocuments - previousStats.sharedDocuments}</span>
+                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs md:text-sm">
+                    <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">+{stats.sharedDocuments - previousStats.sharedDocuments}</span>
                   </div>
                 )}
                 {stats.sharedDocuments < previousStats.sharedDocuments && (
-                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-sm">
-                    <TrendingDown className="h-4 w-4" />
-                    <span>{stats.sharedDocuments - previousStats.sharedDocuments}</span>
+                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs md:text-sm">
+                    <TrendingDown className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">{stats.sharedDocuments - previousStats.sharedDocuments}</span>
                   </div>
                 )}
               </div>
-              <div className="text-3xl font-bold text-foreground mb-1">{stats.sharedDocuments}</div>
-              <div className="text-sm text-muted-foreground">Shared Documents</div>
+              <div className="text-xl md:text-3xl font-bold text-foreground mb-0.5 md:mb-1">{stats.sharedDocuments}</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Shared Documents</div>
             </CardContent>
           </Card>
 
           <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                  <Zap className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+            <CardContent className="p-3 md:p-6">
+              <div className="flex items-center justify-between mb-2 md:mb-4">
+                <div className="p-2 md:p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                  <Zap className="h-4 w-4 md:h-6 md:w-6 text-yellow-600 dark:text-yellow-400" />
                 </div>
                 {stats.aiSummaries > previousStats.aiSummaries && (
-                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>+{stats.aiSummaries - previousStats.aiSummaries}</span>
+                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs md:text-sm">
+                    <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">+{stats.aiSummaries - previousStats.aiSummaries}</span>
                   </div>
                 )}
                 {stats.aiSummaries < previousStats.aiSummaries && (
-                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-sm">
-                    <TrendingDown className="h-4 w-4" />
-                    <span>{stats.aiSummaries - previousStats.aiSummaries}</span>
+                  <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs md:text-sm">
+                    <TrendingDown className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">{stats.aiSummaries - previousStats.aiSummaries}</span>
                   </div>
                 )}
               </div>
-              <div className="text-3xl font-bold text-foreground mb-1">{stats.aiSummaries}</div>
-              <div className="text-sm text-muted-foreground">AI Summaries</div>
+              <div className="text-xl md:text-3xl font-bold text-foreground mb-0.5 md:mb-1">{stats.aiSummaries}</div>
+              <div className="text-xs md:text-sm text-muted-foreground">AI Summaries</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
           <Card 
             className="bg-card border-border hover:bg-muted/50 transition-colors cursor-pointer"
             onClick={() => setCreateModalOpen(true)}
           >
-            <CardContent className="p-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Plus className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                  <h3 className="font-semibold text-foreground mb-1">Create New Group</h3>
-                  <p className="text-sm text-muted-foreground">Start a new study group and invite members.</p>
+            <CardContent className="p-4 md:p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="p-2 md:p-3 bg-primary/10 rounded-lg">
+                  <Plus className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm md:text-base font-semibold text-foreground mb-0.5 md:mb-1">Create New Group</h3>
+                  <p className="text-xs md:text-sm text-muted-foreground">Start a new study group and invite members.</p>
                 </div>
               </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground" />
+              <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground flex-shrink-0" />
             </CardContent>
           </Card>
 
@@ -386,17 +386,17 @@ export default function Dashboard() {
             className="bg-card border-border hover:bg-muted/50 transition-colors cursor-pointer"
             onClick={() => setJoinModalOpen(true)}
           >
-            <CardContent className="p-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Key className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Join with Code</h3>
-                  <p className="text-sm text-muted-foreground">Enter an invitation code to join a group.</p>
+            <CardContent className="p-4 md:p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="p-2 md:p-3 bg-primary/10 rounded-lg">
+                  <Key className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+              </div>
+              <div>
+                  <h3 className="text-sm md:text-base font-semibold text-foreground mb-0.5 md:mb-1">Join with Code</h3>
+                  <p className="text-xs md:text-sm text-muted-foreground">Enter an invitation code to join a group.</p>
               </div>
             </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground" />
+              <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground flex-shrink-0" />
             </CardContent>
           </Card>
 
@@ -404,17 +404,17 @@ export default function Dashboard() {
             className="bg-card border-border hover:bg-muted/50 transition-colors cursor-pointer"
             onClick={() => setShowSummaryArchive(true)}
             >
-            <CardContent className="p-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Archive className="h-6 w-6 text-primary" />
+            <CardContent className="p-4 md:p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="p-2 md:p-3 bg-primary/10 rounded-lg">
+                  <Archive className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">AI Summary Archive</h3>
-                  <p className="text-sm text-muted-foreground">View all AI-generated summaries.</p>
+                  <h3 className="text-sm md:text-base font-semibold text-foreground mb-0.5 md:mb-1">AI Summary Archive</h3>
+                  <p className="text-xs md:text-sm text-muted-foreground">View all AI-generated summaries.</p>
                 </div>
           </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground" />
+              <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground flex-shrink-0" />
             </CardContent>
           </Card>
         </div>
