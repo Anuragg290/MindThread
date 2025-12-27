@@ -125,20 +125,39 @@
    ========================= */
 /* Fix for mobile tabs - ensure TabsContent takes full height */
 @layer utilities {
+  /* Override hidden attribute for active tabs - must override HTML hidden attribute */
+  [data-radix-tabs-content][data-state="active"][hidden] {
+    display: flex !important;
+    visibility: visible !important;
+    height: auto !important;
+  }
+  
   [data-radix-tabs-content][data-state="active"] {
     display: flex !important;
     flex: 1 1 0% !important;
     min-height: 0 !important;
     margin-top: 0 !important;
     height: 100% !important;
+    visibility: visible !important;
   }
   
+  /* Hide inactive tabs properly */
+  [data-radix-tabs-content][data-state="inactive"] {
+    display: none !important;
+  }
+  
+  /* Remove default margin from all tabs */
   [data-radix-tabs-content] {
     margin-top: 0 !important;
   }
   
   /* Ensure ChatWindow and its children take full height on mobile */
   @media (max-width: 1023px) {
+    [data-radix-tabs-content][data-state="active"] {
+      display: flex !important;
+      height: 100% !important;
+    }
+    
     [data-radix-tabs-content][data-state="active"] > div {
       height: 100% !important;
       min-height: 0 !important;
