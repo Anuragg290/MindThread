@@ -84,7 +84,7 @@ const httpServer = createServer(app);
 
 const socketOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',')
-  : ['http://localhost:5173', 'http://localhost:8080', 'http://localhost:3000'];
+  : ['http://localhost:5173', 'http://localhost:8080', 'https://mind-thread-psi.vercel.app/'];
 
 const io = new Server(httpServer, {
   cors: {
