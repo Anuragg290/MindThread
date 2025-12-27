@@ -26,6 +26,15 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
+    // Check if API_BASE_URL is configured
+    if (!API_BASE_URL) {
+      console.error('API_BASE_URL is not configured. Please set VITE_API_URL environment variable.');
+      return {
+        success: false,
+        error: 'API URL is not configured. Please check your environment variables.',
+      };
+    }
+
     const token = this.getToken();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -39,13 +48,29 @@ class ApiService {
         headers,
       });
 
-      const data = await response.json();
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          return {
+            success: false,
+            error: text || `HTTP ${response.status}: ${response.statusText}`,
+          };
+        }
+      }
 
       if (!response.ok) {
         console.error(`API Error [${response.status}]:`, data);
         return {
           success: false,
-          error: data.message || data.error || 'An error occurred',
+          error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`,
         };
       }
 
@@ -54,9 +79,10 @@ class ApiService {
         data,
       };
     } catch (error) {
+      console.error('Network error:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Network error',
+        error: error instanceof Error ? error.message : 'Network error. Please check your connection and API URL.',
       };
     }
   }

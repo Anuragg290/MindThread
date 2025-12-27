@@ -23,16 +23,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = api.getToken();
     if (token) {
-      api.getProfile().then((response) => {
-        if (response.success && response.data) {
-          setAuthState({
-            user: response.data,
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-          socketService.connect(token);
-        } else {
+      api.getProfile()
+        .then((response) => {
+          if (response.success && response.data) {
+            setAuthState({
+              user: response.data,
+              token,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+            socketService.connect(token);
+          } else {
+            api.setToken(null);
+            setAuthState({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+              isLoading: false,
+            });
+          }
+        })
+        .catch((error) => {
+          console.error('Error validating token on refresh:', error);
           api.setToken(null);
           setAuthState({
             user: null,
@@ -40,8 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isAuthenticated: false,
             isLoading: false,
           });
-        }
-      });
+        });
     } else {
       setAuthState((prev) => ({ ...prev, isLoading: false }));
     }
