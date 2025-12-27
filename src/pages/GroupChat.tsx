@@ -294,36 +294,36 @@ export default function GroupChat() {
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="text-xs">{onlineMembers} online</Badge>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <Button 
-                    variant="outline" 
+                    variant="default" 
                     size="sm"
                     onClick={() => generateChatSummary(50)}
                     disabled={isGenerating}
-                    className="h-8 px-2.5 text-xs border-border"
+                    className="h-8 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
                     title="Generate new summary"
                   >
                     {isGenerating ? (
                       <>
                         <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                        <span className="hidden sm:inline">Generating</span>
+                        <span>Generating</span>
                       </>
                     ) : (
                       <>
                         <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                        <span className="hidden sm:inline">Generate</span>
+                        <span>Generate</span>
                       </>
                     )}
                   </Button>
                   <Button 
-                    variant="ghost" 
+                    variant="outline" 
                     size="sm"
                     onClick={() => setShowSummariesModal(true)}
-                    className="h-8 px-2.5 text-xs"
+                    className="h-8 px-3 text-xs border-border"
                     title="View all summaries"
                   >
                     <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                    <span className="hidden sm:inline">View</span>
+                    <span>View</span>
                   </Button>
                 </div>
               </div>

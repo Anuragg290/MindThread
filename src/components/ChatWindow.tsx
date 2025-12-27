@@ -333,7 +333,7 @@ export default function ChatWindow({
       {/* Messages Area - Scrollable container */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 scrollbar-thin"
+        className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 scrollbar-thin pb-24 lg:pb-6"
       >
         <div className="max-w-7xl pr-4 lg:pr-6">
           {hasMore && (
@@ -410,7 +410,7 @@ export default function ChatWindow({
 
       {/* 🔥 TIER 1: Typing Indicator - Shows above input */}
       {typingUsers.size > 0 && (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 px-4 py-2 bg-card border border-border rounded-full shadow-sm text-xs text-muted-foreground">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 lg:absolute lg:bottom-20 px-4 py-2 bg-card border border-border rounded-full shadow-sm text-xs text-muted-foreground">
           {Array.from(typingUsers.values()).length === 1 ? (
             <span>{Array.from(typingUsers.values())[0]} is typing…</span>
           ) : typingUsers.size === 2 ? (
@@ -423,29 +423,14 @@ export default function ChatWindow({
 
       {/* Scroll to Bottom Button - Appears when scrolled up */}
       {showScrollToBottom && (
-  <button
-    onClick={scrollToBottom}
-    className="
-      absolute
-      bottom-24
-      left-1/2
-      -translate-x-1/2
-      z-20
-      h-10 w-10
-      rounded-full
-      bg-card
-      border border-border
-      shadow-lg
-      flex items-center justify-center
-      hover:bg-muted/50
-      transition-all
-      hover:scale-105
-    "
-    title="Scroll to bottom"
-  >
-    <ChevronDown className="h-5 w-5 text-foreground" />
-  </button>
-)}
+        <button
+          onClick={scrollToBottom}
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 lg:absolute lg:bottom-24 h-10 w-10 rounded-full bg-card border border-border shadow-lg flex items-center justify-center hover:bg-muted/50 transition-all hover:scale-105"
+          title="Scroll to bottom"
+        >
+          <ChevronDown className="h-5 w-5 text-foreground" />
+        </button>
+      )}
 
 
       {/* Input Area - Fixed at bottom */}
@@ -459,7 +444,7 @@ export default function ChatWindow({
         - Not full-width, subtle border
         - ChatGPT-like monochrome design
       */}
-      <div className="flex-shrink-0 pb-4 pt-2 border-t border-border bg-background sticky bottom-0 z-10">
+      <div className="flex-shrink-0 pb-4 pt-2 border-t border-border bg-background lg:relative fixed bottom-0 left-0 right-0 z-50 lg:z-auto">
         <div className="max-w-[700px] mx-auto px-3 sm:px-4 lg:px-4 lg:pr-6">
           {/* 🔥 TIER 2: Reply preview above input */}
           {replyingTo && (
