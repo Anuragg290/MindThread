@@ -32,6 +32,7 @@ import {
   LogOut,
   Trash2
 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
@@ -71,6 +72,7 @@ export default function GroupChat() {
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(() => {
     return (localStorage.getItem('theme') || 'light') as 'light' | 'dark';
   });
+  const [mobileTab, setMobileTab] = useState<'chat' | 'documents' | 'members'>('chat');
 
   useEffect(() => {
     if (groupId) {
@@ -210,43 +212,43 @@ export default function GroupChat() {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Top Header Section */}
       <header className="flex-shrink-0 border-b border-border bg-card">
-        <div className="px-6 py-4">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-start gap-4 flex-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => navigate('/dashboard')}
-              className="hover:bg-muted/50 transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+        <div className="px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-start justify-between gap-2 sm:gap-4">
+            <div className="flex items-start gap-2 sm:gap-4 flex-1 min-w-0">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate('/dashboard')}
+                className="hover:bg-muted/50 transition-colors flex-shrink-0"
+              >
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+              <div className="hidden sm:block p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex-shrink-0">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-foreground mb-2">{group.name}</h1>
-                <p className="text-muted-foreground mb-4">{group.description}</p>
-                <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold text-foreground mb-1 sm:mb-2 truncate">{group.name}</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-4 line-clamp-2">{group.description}</p>
+                <div className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Users className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span>{totalMembers} members</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    <span>{files.length} documents</span>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span>{files.length} docs</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="hidden sm:flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span>Created {format(new Date(group.createdAt), 'MM/dd/yyyy')}</span>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -266,8 +268,399 @@ export default function GroupChat() {
         </div>
       </header>
 
-      {/* Three-Panel Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* Mobile: Tab-based Layout */}
+      <div className="flex-1 flex flex-col lg:hidden overflow-hidden">
+        <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as 'chat' | 'documents' | 'members')} className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-shrink-0 border-b border-border bg-card px-2 sm:px-4">
+            <TabsList className="grid w-full grid-cols-3 h-10">
+              <TabsTrigger value="chat" className="text-xs sm:text-sm">
+                <MessageSquare className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Chat</span>
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="text-xs sm:text-sm">
+                <FileText className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Docs</span>
+              </TabsTrigger>
+              <TabsTrigger value="members" className="text-xs sm:text-sm">
+                <Users className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Members</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="chat" className="flex-1 flex flex-col m-0 overflow-hidden">
+            <div className="flex-shrink-0 border-b border-border bg-card px-3 sm:px-4 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">{onlineMembers} online</Badge>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => generateChatSummary(50)}
+                    disabled={isGenerating}
+                    className="h-7 px-2 text-xs"
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3 w-3" />
+                    )}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setShowSummariesModal(true)}
+                    className="h-7 px-2 text-xs"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 min-h-0">
+              <ChatWindow 
+                groupId={groupId!}
+                messages={messages}
+                files={files}
+                isLoading={messagesLoading} 
+                hasMore={hasMore} 
+                onSendMessage={sendMessage} 
+                onLoadMore={loadMore}
+                onFileUpload={handleFileUpload}
+                isUploading={isUploading}
+                onReaction={addReaction}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="documents" className="flex-1 flex flex-col m-0 overflow-hidden">
+            <div className="flex-shrink-0 border-b border-border bg-card px-3 sm:px-4 py-2">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-foreground" />
+                  <h2 className="text-sm sm:text-base font-semibold text-foreground">Documents</h2>
+                  <Badge variant="secondary" className="text-xs">{files.length}</Badge>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search..."
+                    value={documentSearch}
+                    onChange={(e) => setDocumentSearch(e.target.value)}
+                    className="pl-7 sm:pl-10 h-8 sm:h-9 text-xs sm:text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={documentFilter}
+                    onChange={(e) => setDocumentFilter(e.target.value)}
+                    className="flex-1 h-8 sm:h-9 px-2 text-xs sm:text-sm border border-border rounded-md bg-background text-foreground"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="pdf">PDF</option>
+                    <option value="docx">DOCX</option>
+                    <option value="txt">TXT</option>
+                  </select>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-8 sm:h-9 px-2 sm:px-3"
+                  >
+                    <Upload className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Upload</span>
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.docx,.txt"
+                    onChange={handleFileInputChange}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 space-y-2">
+              {filesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              ) : filteredDocuments.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+                  <p className="text-xs sm:text-sm text-muted-foreground">No documents found</p>
+                </div>
+              ) : (
+                filteredDocuments.map((file) => {
+                  const uploader = typeof file.uploader === 'string' ? null : file.uploader;
+                  const uploaderId = typeof file.uploader === 'string' ? file.uploader : file.uploader?._id;
+                  const isOwnFile = uploaderId === user?._id;
+                  const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+                  const fileExtension = file.originalName.split('.').pop()?.toUpperCase() || 'FILE';
+                  const hasSummary = summaries.some(s => {
+                    if (!s.sourceDocument) return false;
+                    const sourceDoc = s.sourceDocument;
+                    if (typeof sourceDoc === 'string') {
+                      return sourceDoc === file._id;
+                    }
+                    if (typeof sourceDoc === 'object' && '_id' in sourceDoc) {
+                      return (sourceDoc as any)._id === file._id;
+                    }
+                    return false;
+                  });
+                  
+                  return (
+                    <Card key={file._id} className="border-border hover:bg-muted/30 transition-colors">
+                      <CardContent className="p-2 sm:p-3">
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-foreground truncate mb-1">{file.originalName}</p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              {fileSizeMB} MB {fileExtension} • {format(new Date(file.createdAt), 'MM/dd/yyyy')}
+                            </p>
+                            {uploader && (
+                              <div className="flex items-center gap-1 sm:gap-2 mb-2">
+                                <Avatar className="h-4 w-4 sm:h-5 sm:w-5">
+                                  <AvatarImage src={uploader.avatar} alt={uploader.username} />
+                                  <AvatarFallback className="text-xs">{uploader.username[0]?.toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-xs text-muted-foreground">{uploader.username}</span>
+                              </div>
+                            )}
+                            {hasSummary && (
+                              <Badge variant="secondary" className="text-xs mb-2 inline-flex items-center">
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                Summary Ready
+                              </Badge>
+                            )}
+                            <div className="flex items-center gap-1 flex-wrap mt-2">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-6 sm:h-7 px-2 text-xs whitespace-nowrap" 
+                                onClick={async () => {
+                                  if (file.mimeType === 'application/pdf') {
+                                    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(file.url)}&embedded=true`;
+                                    window.open(viewerUrl, '_blank', 'noopener,noreferrer');
+                                  } else if (file.mimeType === 'text/plain') {
+                                    try {
+                                      const response = await fetch(file.url);
+                                      const text = await response.text();
+                                      const htmlContent = `
+                                        <!DOCTYPE html>
+                                        <html>
+                                          <head>
+                                            <meta charset="UTF-8">
+                                            <title>${file.originalName}</title>
+                                            <style>
+                                              body { font-family: 'Courier New', monospace; max-width: 1200px; margin: 0 auto; padding: 20px; background: #fff; color: #000; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; }
+                                              @media (prefers-color-scheme: dark) { body { background: #1a1a1a; color: #e0e0e0; } }
+                                            </style>
+                                          </head>
+                                          <body>${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</body>
+                                        </html>
+                                      `;
+                                      const blob = new Blob([htmlContent], { type: 'text/html' });
+                                      const url = URL.createObjectURL(blob);
+                                      window.open(url, '_blank', 'noopener,noreferrer');
+                                    } catch (error) {
+                                      window.open(file.url, '_blank', 'noopener,noreferrer');
+                                    }
+                                  } else if (file.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                                    const officeViewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(file.url)}`;
+                                    window.open(officeViewerUrl, '_blank', 'noopener,noreferrer');
+                                  } else if (file.mimeType.startsWith('image/')) {
+                                    window.open(file.url, '_blank', 'noopener,noreferrer');
+                                  } else {
+                                    window.open(file.url, '_blank', 'noopener,noreferrer');
+                                  }
+                                }}
+                              >
+                                View
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-6 sm:h-7 px-2 text-xs whitespace-nowrap" 
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(file.url);
+                                    if (!response.ok) throw new Error('Failed to fetch file');
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = file.originalName || 'download';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                  } catch (error) {
+                                    const link = document.createElement('a');
+                                    link.href = file.url;
+                                    link.download = file.originalName || 'download';
+                                    link.target = '_blank';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                  }
+                                }}
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                <span className="hidden sm:inline">Download</span>
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-6 sm:h-7 px-2 text-xs whitespace-nowrap"
+                                onClick={async () => {
+                                  if (groupId && !isGenerating && !hasSummary) {
+                                    const result = await generateDocumentSummary(file._id);
+                                    if (result?.success) {
+                                      await refetchSummaries();
+                                    }
+                                  }
+                                }}
+                                disabled={isGenerating || hasSummary}
+                              >
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                {hasSummary ? 'Ready' : 'AI'}
+                              </Button>
+                              {isOwnFile && (
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-6 sm:h-7 px-2 text-xs whitespace-nowrap text-destructive hover:text-destructive"
+                                  onClick={() => setFileToDelete(file._id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="members" className="flex-1 flex flex-col m-0 overflow-hidden">
+            <div className="flex-shrink-0 border-b border-border bg-card px-3 sm:px-4 py-2">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-foreground" />
+                  <h2 className="text-sm sm:text-base font-semibold text-foreground">Members</h2>
+                  <Badge variant="secondary" className="text-xs">{totalMembers} • {onlineMembers} online</Badge>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search..."
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    className="pl-7 sm:pl-10 h-8 sm:h-9 text-xs sm:text-sm"
+                  />
+                </div>
+                <select
+                  value={memberFilter}
+                  onChange={(e) => setMemberFilter(e.target.value)}
+                  className="w-full h-8 sm:h-9 px-2 text-xs sm:text-sm border border-border rounded-md bg-background text-foreground"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="owner">Owner</option>
+                  <option value="member">Member</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 space-y-2">
+              {filteredMembers.map((member) => {
+                const memberUser = member.user;
+                const initials = (memberUser.username?.[0] || memberUser.email?.[0] || 'U').toUpperCase();
+                const isOnline = true;
+                const isCurrentUser = memberUser._id === user?._id;
+                const isOwner = member.role === 'owner';
+                const currentUserIsOwner = group?.members.find(m => m.user._id === user?._id)?.role === 'owner';
+                const canLeave = isCurrentUser && !isOwner;
+                
+                const handleLeaveGroup = async () => {
+                  if (groupId && window.confirm('Are you sure you want to leave this group?')) {
+                    await leaveGroup(groupId);
+                    navigate('/dashboard');
+                  }
+                };
+                
+                return (
+                  <Card key={memberUser._id} className="border-border hover:bg-muted/30 transition-colors">
+                    <CardContent className="p-2 sm:p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                          <div className="relative">
+                            <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+                              <AvatarImage src={memberUser.avatar} alt={memberUser.username} />
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs sm:text-sm">
+                                {initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            {isOnline && (
+                              <div className="absolute bottom-0 right-0 h-2.5 w-2.5 sm:h-3 sm:w-3 bg-green-500 rounded-full border-2 border-background"></div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-foreground truncate">{memberUser.username}</p>
+                            <p className="text-xs text-muted-foreground truncate">{memberUser.email}</p>
+                            <Badge variant="secondary" className="text-xs mt-1 mr-1">
+                              {member.role === 'owner' ? 'Admin' : member.role === 'admin' ? 'Moderator' : 'Member'}
+                            </Badge>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Joined {format(new Date(member.joinedAt), 'MM/dd/yyyy')}
+                            </p>
+                            {memberStats[memberUser._id] && (
+                              <div className="flex items-center gap-2 sm:gap-3 mt-1 text-xs text-muted-foreground">
+                                <span>{memberStats[memberUser._id].messages} msgs</span>
+                                <span>{memberStats[memberUser._id].files} files</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {canLeave && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+                                <MoreVertical className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onClick={handleLeaveGroup} className="text-red-600 dark:text-red-400">
+                                <LogOut className="h-4 w-4 mr-2" />
+                                Leave Group
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Desktop: Three-Panel Layout */}
+      <div className="hidden lg:flex flex-1 overflow-hidden">
         {/* Left Panel: Group Chat */}
         <div className="flex-1 flex flex-col min-w-0 border-r border-border">
           <div className="flex-shrink-0 border-b border-border bg-card px-4 py-3">
