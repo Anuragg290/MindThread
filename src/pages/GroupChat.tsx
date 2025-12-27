@@ -32,7 +32,6 @@ import {
   LogOut,
   Trash2
 } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
@@ -270,25 +269,48 @@ export default function GroupChat() {
 
       {/* Mobile: Tab-based Layout */}
       <div className="flex-1 flex flex-col lg:hidden overflow-hidden min-h-0 h-full">
-        <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as 'chat' | 'documents' | 'members')} className="flex-1 flex flex-col overflow-hidden min-h-0 h-full">
-          <div className="flex-shrink-0 border-b border-border bg-card px-2 sm:px-4">
-            <TabsList className="grid w-full grid-cols-3 h-10">
-              <TabsTrigger value="chat" className="text-xs sm:text-sm">
-                <MessageSquare className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Chat</span>
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="text-xs sm:text-sm">
-                <FileText className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Docs</span>
-              </TabsTrigger>
-              <TabsTrigger value="members" className="text-xs sm:text-sm">
-                <Users className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Members</span>
-              </TabsTrigger>
-            </TabsList>
+        {/* Custom Tab Navigation */}
+        <div className="flex-shrink-0 border-b border-border bg-card px-2 sm:px-4">
+          <div className="grid w-full grid-cols-3 h-10 gap-1 bg-muted/30 rounded-lg p-1">
+            <button
+              onClick={() => setMobileTab('chat')}
+              className={`flex items-center justify-center gap-1 sm:gap-2 rounded-md text-xs sm:text-sm font-medium transition-all ${
+                mobileTab === 'chat'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <MessageSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Chat</span>
+            </button>
+            <button
+              onClick={() => setMobileTab('documents')}
+              className={`flex items-center justify-center gap-1 sm:gap-2 rounded-md text-xs sm:text-sm font-medium transition-all ${
+                mobileTab === 'documents'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Docs</span>
+            </button>
+            <button
+              onClick={() => setMobileTab('members')}
+              className={`flex items-center justify-center gap-1 sm:gap-2 rounded-md text-xs sm:text-sm font-medium transition-all ${
+                mobileTab === 'members'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Members</span>
+            </button>
           </div>
+        </div>
 
-          <TabsContent value="chat" className="!mt-0 flex-1 flex flex-col overflow-hidden min-h-0 h-full data-[state=active]:flex">
+        {/* Chat Tab Content */}
+        {mobileTab === 'chat' && (
+          <div className="flex-1 flex flex-col overflow-hidden min-h-0 h-full">
             <div className="flex-shrink-0 border-b border-border bg-card px-3 sm:px-4 py-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -342,9 +364,12 @@ export default function GroupChat() {
                 onReaction={addReaction}
               />
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="documents" className="!mt-0 flex-1 flex flex-col overflow-hidden min-h-0 h-full data-[state=active]:flex">
+        {/* Documents Tab Content */}
+        {mobileTab === 'documents' && (
+          <div className="flex-1 flex flex-col overflow-hidden min-h-0 h-full">
             <div className="flex-shrink-0 border-b border-border bg-card px-3 sm:px-4 py-3">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -562,9 +587,12 @@ export default function GroupChat() {
                 })
               )}
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="members" className="!mt-0 flex-1 flex flex-col overflow-hidden min-h-0 h-full data-[state=active]:flex">
+        {/* Members Tab Content */}
+        {mobileTab === 'members' && (
+          <div className="flex-1 flex flex-col overflow-hidden min-h-0 h-full">
             <div className="flex-shrink-0 border-b border-border bg-card px-3 sm:px-4 py-3">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -665,8 +693,8 @@ export default function GroupChat() {
                 );
               })}
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
 
       {/* Desktop: Three-Panel Layout */}
