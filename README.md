@@ -37,7 +37,7 @@ MindThread is a real-time group chat application designed to help students colla
 
 ---
 
-## 🏗 System Architecture
+##  System Architecture
 
 MindThread follows a scalable client–server architecture:
 
@@ -56,21 +56,22 @@ MindThread follows a scalable client–server architecture:
 ```text
 mindthread/
 ├── backend/
-│   ├── config/       # Database and service configurations
-│   ├── controllers/  # Route logic handlers
-│   ├── models/       # Mongoose schemas
-│   ├── routes/       # API endpoint definitions
-│   ├── sockets/      # Socket.IO event logic
+│   ├── config/       # Configurations (DB, Cloudinary)
+│   ├── controllers/  # Logic for API routes
+│   ├── models/       # Mongoose schemas (User, Message, Group)
+│   ├── routes/       # API endpoints
+│   ├── sockets/      # Socket.IO event handlers
 │   ├── utils/        # Helper functions
-│   └── server.js     # Entry point
+│   └── server.js     # Server entry point
 ├── frontend/
 │   ├── src/
 │   ├── components/   # Reusable UI components
-│   ├── pages/        # Main view components
-│   └── services/     # API and Socket clients
+│   ├── pages/        # Application views
+│   └── services/     # API and Socket connection logic
 └── README.md
 
 ---
+
 ## Installation and Setup
 
 ### Prerequisites
@@ -86,6 +87,7 @@ mindthread/
 ```bash
 git clone https://github.com/your-username/mindthread.git
 cd mindthread
+
 Backend setup
 bash
 Copy code
@@ -137,3 +139,4 @@ Protected API routes
 Group membership validation
 
 Secure file handling using Cloudinary
+
