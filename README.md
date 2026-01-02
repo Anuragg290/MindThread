@@ -1,142 +1,351 @@
 # MindThread
 
-MindThread is a real-time group chat application designed to help students collaborate, share study resources, and organize discussions more effectively. It combines instant messaging, file sharing, and AI-powered chat summarization into a single, modern platform.
+A real-time collaborative study group platform that enables students to create study groups, chat in real-time, share documents, and generate AI-powered summaries of conversations and documents.
 
----
+![MindThread](https://img.shields.io/badge/MindThread-Study%20Groups-blue)
+![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)
+![Node.js](https://img.shields.io/badge/Node.js-Express-green?logo=node.js)
+![MongoDB](https://img.shields.io/badge/MongoDB-Database-47A248?logo=mongodb)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-Real--time-010101?logo=socket.io)
 
-## Features
+## ✨ Features
 
-- **JWT-based User Authentication:** Secure login and registration.
-- **Real-time Chat:** Powered by Socket.IO for instant messaging.
-- **AI-Powered Summaries:** Uses Gemini AI to condense long chat histories into key takeaways.
-- **Modern UI:** ChatGPT-inspired interface with Light and Dark mode.
-- **Rich Messaging:** Typing indicators, emoji reactions, message replies, and pinned messages.
-- **File Sharing:** Secure media and document uploads integrated with Cloudinary.
+- **Real-Time Messaging** - Chat with group members instantly using Socket.IO
+- **File Sharing** - Upload and share PDF, DOCX, and TXT documents
+- **AI-Powered Summaries** - Generate summaries of conversations and documents using Google Gemini
+- **Message Reactions** - React to messages with emojis
+- **Message Replies** - Reply to specific messages in threads
+- **Group Management** - Create groups, invite members, and manage roles
+- **Responsive Design** - Works seamlessly on mobile and desktop
+- **Secure Authentication** - JWT-based authentication with password hashing
+- **Typing Indicators** - See when members are typing
+- **Dashboard** - View your groups, messages, and activity at a glance
 
----
-
-##  Tech Stack
+## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework:** React
-- **Styling:** Tailwind CSS
-- **Language:** TypeScript
+- **React 18.3.1** - UI library
+- **TypeScript** - Type safety
+- **Vite 5.4.19** - Build tool
+- **Tailwind CSS** - Styling
+- **Radix UI** - Accessible components
+- **Socket.IO Client** - Real-time communication
+- **React Router** - Routing
+- **TanStack Query** - Server state management
 
 ### Backend
-- **Environment:** Node.js
-- **Framework:** Express.js
-- **Real-time:** Socket.IO
+- **Node.js** - Runtime
+- **Express 4.18.2** - Web framework
+- **Socket.IO 4.6.1** - Real-time WebSocket server
+- **MongoDB** - Database
+- **Mongoose** - ODM
+- **JWT** - Authentication
+- **bcryptjs** - Password hashing
+- **Cloudinary** - Cloud file storage
+- **Google Gemini AI** - AI summaries
 
-### Database & Storage
-- **Database:** MongoDB
-- **File Storage:** Cloudinary
+### Infrastructure
+- **Vercel** - Frontend hosting
+- **Render** - Backend hosting
+- **MongoDB Atlas** - Database hosting
+- **Cloudinary** - File storage CDN
 
-### AI & Security
-- **AI Engine:** Gemini AI (Google)
-- **Auth:** JSON Web Tokens (JWT)
+## 📋 Prerequisites
 
----
+Before you begin, ensure you have the following installed:
+- **Node.js** (v18 or higher)
+- **npm** or **yarn**
+- **MongoDB** (local or MongoDB Atlas account)
+- **Git**
 
-##  System Architecture
+## 🚀 Getting Started
 
-MindThread follows a scalable client–server architecture:
-
-
-
-- **REST APIs:** Handle authentication, group management, and data persistence.
-- **Socket.IO:** Manages real-time communication such as instant messaging and typing indicators.
-- **MongoDB:** Stores users, groups, messages, and file metadata.
-- **Cloudinary:** Used for secure file uploads and storage.
-- **Gemini AI:** Generates concise summaries from chat conversations.
-
----
-
-## Project Structure
-
-```text
-mindthread/
-├── backend/
-│   ├── config/       # Configurations (DB, Cloudinary)
-│   ├── controllers/  # Logic for API routes
-│   ├── models/       # Mongoose schemas (User, Message, Group)
-│   ├── routes/       # API endpoints
-│   ├── sockets/      # Socket.IO event handlers
-│   ├── utils/        # Helper functions
-│   └── server.js     # Server entry point
-├── frontend/
-│   ├── src/
-│   ├── components/   # Reusable UI components
-│   ├── pages/        # Application views
-│   └── services/     # API and Socket connection logic
-└── README.md
-
----
-
-## Installation and Setup
-
-### Prerequisites
-- Node.js (v18 or higher)
-- MongoDB (local or MongoDB Atlas)
-- Cloudinary account
-- Gemini API key
-
----
-
-### Clone the repository
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/mindthread.git
+git clone https://github.com/yourusername/mindthread.git
 cd mindthread
+```
 
-Backend setup
-bash
-Copy code
+### 2. Backend Setup
+
+```bash
+# Navigate to backend directory
 cd backend
+
+# Install dependencies
 npm install
 
-Create a .env file inside the backend directory:
+# Create .env file
+cp .env.example .env
+```
 
+**Configure Backend Environment Variables** (`backend/.env`):
+
+```env
+# MongoDB Connection
+MONGODB_URI=mongodb://localhost:27017/mindthread
+# Or for MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/mindthread?retryWrites=true&w=majority
+
+# Server Configuration
 PORT=5001
 NODE_ENV=development
 
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
-CLOUDINARY_CLOUD_NAME=your_cloudinary_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-GEMINI_API_KEY=your_gemini_api_key
+# Frontend URL (for CORS)
+FRONTEND_URL=http://localhost:5173,http://localhost:8080
 
+# JWT Secret (generate a strong random string)
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 
-Start the backend server:
+# Cloudinary Configuration (for file storage)
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 
-npm run dev
+# Google Gemini API Key (for AI summaries)
+GEMINI_API_KEY=your-gemini-api-key-here
+```
 
-Frontend setup
-cd frontend
+**Get API Keys:**
+- **Cloudinary**: Sign up at [cloudinary.com](https://cloudinary.com/users/register/free) → Dashboard → Settings → Product Environment Credentials
+- **Google Gemini**: Get API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+### 3. Frontend Setup
+
+```bash
+# Navigate back to root directory
+cd ..
+
+# Install dependencies
 npm install
 
+# Create .env file
+cp .env.example .env
+```
 
-Create a .env file inside the frontend directory:
+**Configure Frontend Environment Variables** (`.env`):
 
+```env
+# Backend API URL
 VITE_API_URL=http://localhost:5001/api
-Start the frontend development server:
 
+# Socket.IO Server URL
+VITE_SOCKET_URL=http://localhost:5001
+```
+
+### 4. Start MongoDB
+
+**Option A: Local MongoDB**
+```bash
+# macOS (using Homebrew)
+brew services start mongodb-community
+
+# Or run manually
+mongod --config /usr/local/etc/mongod.conf
+```
+
+**Option B: MongoDB Atlas (Cloud)**
+- Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+- Create a cluster and get your connection string
+- Update `MONGODB_URI` in `backend/.env`
+
+**Option C: Docker**
+```bash
+docker run -d -p 27017:27017 --name mongodb mongo:latest
+```
+
+### 5. Run the Application
+
+**Terminal 1 - Backend:**
+```bash
+cd backend
 npm run dev
+```
 
-Running the Application
+**Terminal 2 - Frontend:**
+```bash
+npm run dev
+```
 
-Frontend runs at http://localhost:5173
+The application will be available at:
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:5001/api
+- **Socket.IO**: http://localhost:5001
 
-Backend API runs at http://localhost:5001/api
+## 📁 Project Structure
 
-Socket.IO runs on the backend server
+```
+mindthread/
+├── backend/                 # Backend server
+│   ├── config/             # Configuration files
+│   │   ├── database.js     # MongoDB connection
+│   │   └── cloudinary.js   # Cloudinary setup
+│   ├── controllers/        # Route controllers
+│   │   ├── authController.js
+│   │   ├── groupController.js
+│   │   ├── messageController.js
+│   │   ├── fileController.js
+│   │   └── summaryController.js
+│   ├── models/              # Mongoose schemas
+│   │   ├── User.js
+│   │   ├── Group.js
+│   │   ├── Message.js
+│   │   ├── File.js
+│   │   └── Summary.js
+│   ├── routes/              # API routes
+│   ├── middleware/          # Express middleware
+│   ├── sockets/             # Socket.IO handlers
+│   ├── services/            # External services
+│   │   └── geminiService.js
+│   └── server.js            # Entry point
+│
+├── src/                     # Frontend source
+│   ├── components/          # React components
+│   │   ├── ChatWindow.tsx
+│   │   ├── MessageBubble.tsx
+│   │   └── Navbar.tsx
+│   ├── pages/               # Page components
+│   │   ├── Dashboard.tsx
+│   │   ├── GroupChat.tsx
+│   │   ├── Login.tsx
+│   │   └── Register.tsx
+│   ├── hooks/               # Custom React hooks
+│   │   ├── useMessages.ts
+│   │   ├── useFiles.ts
+│   │   └── useSummaries.ts
+│   ├── services/            # API & Socket services
+│   │   ├── api.ts
+│   │   └── socket.ts
+│   ├── contexts/            # React Context
+│   │   └── AuthContext.tsx
+│   └── types/               # TypeScript types
+│
+├── public/                  # Static assets
+└── README.md                # This file
+```
 
-Security
-JWT-based authentication
+## 🔌 API Endpoints
 
-Protected API routes
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/profile` - Get user profile
+- `PATCH /api/auth/profile` - Update profile
 
-Group membership validation
+### Groups
+- `GET /api/groups` - Get user's groups
+- `GET /api/groups/:groupId` - Get group details
+- `POST /api/groups` - Create group
+- `POST /api/groups/:groupId/join` - Join group
+- `POST /api/groups/:groupId/leave` - Leave group
 
-Secure file handling using Cloudinary
+### Messages
+- `GET /api/groups/:groupId/messages` - Get messages (paginated)
+- `POST /api/groups/:groupId/messages` - Send message
+- `POST /api/groups/:groupId/messages/:messageId/reaction` - Add reaction
+
+### Files
+- `GET /api/groups/:groupId/files` - Get files
+- `POST /api/groups/:groupId/files` - Upload file
+- `DELETE /api/groups/:groupId/files/:fileId` - Delete file
+
+### Summaries
+- `GET /api/groups/:groupId/summaries` - Get summaries
+- `POST /api/groups/:groupId/summaries/chat` - Generate chat summary
+- `POST /api/groups/:groupId/summaries/document` - Generate document summary
+
+For detailed API documentation, see [TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md).
+
+## 🚢 Deployment
+
+### Frontend (Vercel)
+
+1. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
+   ```
+
+2. **Deploy on Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - Configure environment variables:
+     ```
+     VITE_API_URL=https://your-backend-url.onrender.com/api
+     VITE_SOCKET_URL=https://your-backend-url.onrender.com
+     ```
+   - Deploy!
+
+### Backend (Render)
+
+1. **Create a new Web Service** on [Render](https://render.com)
+2. **Connect your GitHub repository**
+3. **Configure:**
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+   - **Environment**: Node
+4. **Add Environment Variables:**
+   ```
+   NODE_ENV=production
+   PORT=5001
+   MONGODB_URI=your-mongodb-atlas-uri
+   JWT_SECRET=your-jwt-secret
+   CLOUDINARY_CLOUD_NAME=your-cloud-name
+   CLOUDINARY_API_KEY=your-api-key
+   CLOUDINARY_API_SECRET=your-api-secret
+   GEMINI_API_KEY=your-gemini-key
+   FRONTEND_URL=https://your-frontend.vercel.app
+   ```
+
+### Database (MongoDB Atlas)
+
+1. Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Get your connection string
+3. Update `MONGODB_URI` in your backend environment variables
+
+## 🧪 Testing
+
+```bash
+# Run backend tests (if available)
+cd backend
+npm test
+
+# Run frontend tests (if available)
+npm test
+```
+
+## 📝 Scripts
+
+### Frontend
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+### Backend
+- `npm run dev` - Start development server with nodemon
+- `npm start` - Start production server
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
+## 📧 Contact
+
+For questions or support, please open an issue on GitHub.
+
+---
 
