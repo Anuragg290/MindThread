@@ -255,7 +255,6 @@ mindthread/
 - `POST /api/groups/:groupId/summaries/chat` - Generate chat summary
 - `POST /api/groups/:groupId/summaries/document` - Generate document summary
 
-For detailed API documentation, see [TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md).
 
 ## 🚢 Deployment
 
@@ -348,4 +347,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For questions or support, please open an issue on GitHub.
 
 ---
+
 
